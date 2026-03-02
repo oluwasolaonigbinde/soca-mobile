@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Image, Platform, StyleSheet } from 'react-native';
 
-export default function ClubHomeScreen() {
+export default function OrgHomeScreen() {
   const router = useRouter();
   const signOut = useAuthStore((s) => s.signOut);
   const profile = useAuthStore((s) => s.profile);
@@ -48,7 +48,7 @@ export default function ClubHomeScreen() {
 
   return (
     <Screen style={styles.container}>
-      <Text variant="heading">Club Home</Text>
+      <Text variant="heading">Organization Home</Text>
       <Text variant="body" style={styles.subtitle}>
         Welcome{profile?.display_name || profile?.full_name ? `, ${profile.display_name || profile.full_name}` : ''}.
       </Text>

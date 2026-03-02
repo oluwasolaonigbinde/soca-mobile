@@ -3,6 +3,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/store/auth';
 import type { UserRole } from '@/types/database';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -26,6 +27,11 @@ const ROLES: { value: UserRole; label: string; description: string }[] = [
     label: 'Club',
     description: 'Manage your club and find players',
   },
+  {
+    value: 'org',
+    label: 'Organization',
+    description: 'Federations, leagues, media brands, governing bodies',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -33,6 +39,7 @@ const ROLES: { value: UserRole; label: string; description: string }[] = [
 // ---------------------------------------------------------------------------
 
 export default function RoleSelectionScreen() {
+  const router = useRouter();
   const updateRole = useAuthStore((s) => s.updateRole);
   const loading = useAuthStore((s) => s.loading);
   const [selected, setSelected] = useState<UserRole | null>(null);
@@ -43,7 +50,7 @@ export default function RoleSelectionScreen() {
     setError(null);
     try {
       await updateRole(selected);
-      // Route guard handles redirect to role home
+      router.replace('/onboarding/profile-setup' as Parameters<typeof router.replace>[0]);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     }

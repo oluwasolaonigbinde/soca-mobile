@@ -1,0 +1,19 @@
+# Stack Rules — Expo Router + Supabase
+
+## Routing
+- Use Expo Router file-based routing.
+- Role routes live in route groups: `(player)`, `(scout)`, `(club)`, `(org)`.
+
+## Supabase
+- Use one Supabase client module; do not create multiple clients.
+- Store media in Supabase Storage buckets:
+  - `avatars`
+  - `videos`
+
+## Data access
+- Prefer server-authoritative data (Supabase) over heavy local state.
+- Keep RLS in mind: only participants can access messages; users can edit only their own profile/content.
+
+## Minimalism
+- Avoid introducing complex state libraries unless already in repo.
+- Prefer straightforward patterns that are easy to maintain by agents.

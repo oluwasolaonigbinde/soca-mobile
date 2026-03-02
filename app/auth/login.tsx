@@ -4,7 +4,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/store/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
@@ -26,7 +26,9 @@ type FormData = z.infer<typeof schema>;
 // ---------------------------------------------------------------------------
 
 export default function LoginScreen() {
+  const router = useRouter();
   const signIn = useAuthStore((s) => s.signIn);
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const loading = useAuthStore((s) => s.loading);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +45,7 @@ export default function LoginScreen() {
     setError(null);
     try {
       await signIn(data.email, data.password);
-      // Route guard handles redirect on success
+      router.replace('/');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     }
@@ -110,6 +112,25 @@ export default function LoginScreen() {
         <Button
           title={loading ? 'Signing in\u2026' : 'Log In'}
           onPress={handleSubmit(onSubmit)}
+          disabled={loading}
+        />
+
+        <Button
+          title="Sign in with Google"
+          variant="outline"
+          onPress={async () => {
+            setError(null);
+            try {
+              await signInWithGoogle();
+              router.replace('/');
+            } catch (e: unknown) {
+              setError(
+                e instanceof Error
+                  ? e.message
+                  : 'Google sign-in failed. Check dashboard config.'
+              );
+            }
+          }}
           disabled={loading}
         />
       </View>

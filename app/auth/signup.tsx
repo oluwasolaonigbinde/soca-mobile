@@ -4,7 +4,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/store/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
@@ -27,8 +27,12 @@ type FormData = z.infer<typeof schema>;
 // ---------------------------------------------------------------------------
 
 export default function SignupScreen() {
+  const router = useRouter();
   const signUp = useAuthStore((s) => s.signUp);
   const loading = useAuthStore((s) => s.loading);
+  const pendingEmailVerification = useAuthStore(
+    (s) => s.pendingEmailVerification,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -44,7 +48,10 @@ export default function SignupScreen() {
     setError(null);
     try {
       await signUp(data.email, data.password, data.fullName);
-      // Route guard handles redirect on success
+      const pending = useAuthStore.getState().pendingEmailVerification;
+      if (!pending) {
+        router.replace('/');
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     }
@@ -60,6 +67,15 @@ export default function SignupScreen() {
         <View style={styles.errorBox}>
           <Text variant="caption" style={styles.errorText}>
             {error}
+          </Text>
+        </View>
+      )}
+
+      {pendingEmailVerification && (
+        <View style={styles.infoBox}>
+          <Text variant="caption" style={styles.infoText}>
+            Account created. Check your email to verify your account, then log
+            in.
           </Text>
         </View>
       )}
@@ -161,6 +177,15 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#DC2626',
+  },
+  infoBox: {
+    backgroundColor: '#DBEAFE',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  infoText: {
+    color: '#1D4ED8',
   },
   form: {
     gap: 16,

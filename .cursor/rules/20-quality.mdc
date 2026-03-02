@@ -1,0 +1,16 @@
+# Quality Rules — SOCA V1
+
+## TypeScript
+- Keep types strict.
+- Avoid `any` unless justified with a short comment.
+
+## Verification
+- Before declaring "done", run `/verify` and report:
+  - what commands were run
+  - pass/fail
+  - any follow-up TODOs
+
+## Code health
+- Keep functions small.
+- Prefer clear naming over cleverness.
+- Do not refactor unrelated areas inside a slice.

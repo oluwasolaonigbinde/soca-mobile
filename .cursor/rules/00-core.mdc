@@ -1,0 +1,22 @@
+# Core Rules — SOCA V1
+
+You are working in the SOCA V1 repository.
+
+## Always do this
+- Start with a short plan before making multi-file changes.
+- Prefer the smallest safe diff.
+- Do not invent requirements. If a detail is unknown, add a TODO and proceed with a safe default consistent with `specs/decisions.md`.
+- Do not change scope without updating `specs/decisions.md` and/or the relevant `slices/*.md`.
+
+## Slice discipline
+- Before `/slice-next`, run `/preflight-slice`. Only proceed if PASS or WARN.
+- Implement ONE slice at a time.
+- If asked to implement a slice, read:
+  - `specs/scope.md`
+  - `specs/decisions.md`
+  - the target `slices/XX-*.md`
+- End with verification and a short report.
+
+## Safety checks
+- Preserve TypeScript safety.
+- Avoid new dependencies unless necessary.
