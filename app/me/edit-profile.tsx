@@ -1,52 +1,45 @@
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { uploadAvatar } from '@/lib/avatars';
-import { useAuthStore } from '@/store/auth';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
 
-const schema = z.object({
-  display_name: z.string().min(1, 'Display name is required'),
-  location: z.string().min(1, 'Location is required'),
-  bio: z.string().optional(),
-});
-
-type FormData = z.infer<typeof schema>;
+import { Avatar, Button, Input, Screen, StateCard, Surface, Text, theme } from '@/components/ui';
+import { uploadAvatar } from '@/lib/avatars';
+import {
+  buildProfileFormSchema,
+  getProfileFormDefaults,
+  mapProfileFormValuesToUpdate,
+  type ProfileFormValues,
+} from '@/lib/profile-form';
+import { queryClient } from '@/lib/query';
+import { useAuthStore } from '@/store/auth';
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const fetchProfile = useAuthStore((s) => s.fetchProfile);
   const profile = useAuthStore((s) => s.profile);
+  const currentUserId = useAuthStore((s) => s.session?.user?.id);
   const loading = useAuthStore((s) => s.loading);
   const [error, setError] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const role = profile?.role;
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      display_name: profile?.full_name ?? profile?.display_name ?? '',
-      location: profile?.location ?? '',
-      bio: profile?.bio ?? '',
-    },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(buildProfileFormSchema(role)),
+    defaultValues: getProfileFormDefaults(profile),
   });
 
   const onUploadAvatar = async () => {
@@ -55,6 +48,12 @@ export default function EditProfileScreen() {
       const uploadedUrl = await uploadAvatar();
       if (uploadedUrl) {
         await fetchProfile();
+        if (currentUserId) {
+          await queryClient.invalidateQueries({
+            queryKey: ['profile', currentUserId],
+            refetchType: 'all',
+          });
+        }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Upload failed';
@@ -64,14 +63,10 @@ export default function EditProfileScreen() {
     }
   };
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: ProfileFormValues) => {
     setError(null);
     try {
-      await updateProfile({
-        display_name: data.display_name,
-        location: data.location,
-        bio: data.bio,
-      });
+      await updateProfile(mapProfileFormValuesToUpdate(data));
       router.back();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
@@ -84,99 +79,148 @@ export default function EditProfileScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboard}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.avatarSection}>
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]} />
-            )}
-            <Button
-              title={uploadingAvatar ? 'Uploading…' : 'Change Photo'}
-              variant="outline"
-              onPress={onUploadAvatar}
-              disabled={uploadingAvatar}
-              style={styles.avatarButton}
-            />
-          </View>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Surface elevated style={styles.card}>
+            <Text variant="overline" style={styles.kicker}>
+              EDIT PROFILE
+            </Text>
+            <Text variant="heading">Update your profile</Text>
+            <Text variant="body" style={styles.subtitle}>
+              Update your details anytime.
+            </Text>
 
-          {error && (
-            <View style={styles.errorBox}>
-              <Text variant="caption" style={styles.errorText}>
-                {error}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.form}>
-            <View>
-              <Controller
-                control={control}
-                name="display_name"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Display Name"
-                    autoCapitalize="words"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
+            <View style={styles.avatarSection}>
+              <Avatar
+                uri={profile?.avatar_url}
+                cacheKey={profile?.updated_at}
+                name={profile?.display_name || profile?.full_name || 'Profile'}
+                size={104}
+                style={[styles.avatar, !profile?.avatar_url && styles.avatarPlaceholder]}
               />
-              {errors.display_name && (
-                <Text variant="caption" style={styles.fieldError}>
-                  {errors.display_name.message}
-                </Text>
-              )}
-            </View>
-
-            <View>
-              <Controller
-                control={control}
-                name="location"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Location"
-                    autoCapitalize="words"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
-              {errors.location && (
-                <Text variant="caption" style={styles.fieldError}>
-                  {errors.location.message}
-                </Text>
-              )}
-            </View>
-
-            <View>
-              <Controller
-                control={control}
-                name="bio"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Bio (optional)"
-                    multiline
-                    numberOfLines={3}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value ?? ''}
-                  />
-                )}
+              <Button
+                title={uploadingAvatar ? 'Uploading...' : 'Change Photo'}
+                variant="outline"
+                onPress={onUploadAvatar}
+                disabled={uploadingAvatar}
               />
             </View>
 
-            <Button
-              title={loading ? 'Saving…' : 'Save'}
-              onPress={handleSubmit(onSubmit)}
-              disabled={loading}
-            />
-          </View>
+            {error ? <StateCard title={error} tone="danger" /> : null}
+
+            <View style={styles.form}>
+              <View>
+                <Controller
+                  control={control}
+                  name="display_name"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Display Name"
+                      autoCapitalize="words"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                {errors.display_name ? (
+                  <Text variant="caption" style={styles.fieldError}>
+                    {errors.display_name.message}
+                  </Text>
+                ) : null}
+              </View>
+
+              {role === 'player' ? (
+                <>
+                  <View>
+                    <Controller
+                      control={control}
+                      name="position"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                          placeholder="Playing Position"
+                          autoCapitalize="words"
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          value={value ?? ''}
+                        />
+                      )}
+                    />
+                    {errors.position ? (
+                      <Text variant="caption" style={styles.fieldError}>
+                        {errors.position.message}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  <View>
+                    <Controller
+                      control={control}
+                      name="birth_year"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                          placeholder="Birth Year"
+                          keyboardType="number-pad"
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          value={value ?? ''}
+                        />
+                      )}
+                    />
+                    {errors.birth_year ? (
+                      <Text variant="caption" style={styles.fieldError}>
+                        {errors.birth_year.message}
+                      </Text>
+                    ) : null}
+                  </View>
+                </>
+              ) : null}
+
+              <View>
+                <Controller
+                  control={control}
+                  name="location"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Location"
+                      autoCapitalize="words"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                {errors.location ? (
+                  <Text variant="caption" style={styles.fieldError}>
+                    {errors.location.message}
+                  </Text>
+                ) : null}
+              </View>
+
+              <View>
+                <Controller
+                  control={control}
+                  name="bio"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Bio (optional)"
+                      multiline
+                      numberOfLines={3}
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value ?? ''}
+                      style={styles.multiline}
+                    />
+                  )}
+                />
+              </View>
+
+              <Button
+                title={loading ? 'Saving...' : 'Save'}
+                onPress={handleSubmit(onSubmit)}
+                disabled={loading}
+              />
+            </View>
+          </Surface>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -188,36 +232,40 @@ const styles = StyleSheet.create({
   keyboard: { flex: 1 },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: theme.spacing.xxxl,
+  },
+  card: {
+    gap: theme.spacing.md,
+  },
+  kicker: {
+    color: theme.colors.primary,
+  },
+  subtitle: {
+    color: theme.colors.textMuted,
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    gap: theme.spacing.md,
   },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#eee',
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: theme.colors.surfaceTintStrong,
   },
   avatarPlaceholder: {
-    backgroundColor: '#ddd',
+    backgroundColor: theme.colors.canvasMuted,
   },
-  avatarButton: {
-    marginTop: 12,
-  },
-  errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: { color: '#DC2626' },
-  form: { gap: 16 },
+  form: { gap: theme.spacing.md },
   fieldError: {
-    color: '#DC2626',
+    color: theme.colors.danger,
     marginTop: 4,
     marginLeft: 4,
+  },
+  multiline: {
+    minHeight: 110,
+    textAlignVertical: 'top',
+    paddingTop: theme.spacing.md,
   },
 });

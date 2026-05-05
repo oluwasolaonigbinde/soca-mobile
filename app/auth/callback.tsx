@@ -23,15 +23,12 @@ export default function AuthCallbackScreen() {
   useEffect(() => {
     const run = async () => {
       if (Platform.OS !== 'web' || typeof window === 'undefined') {
-        console.log('[auth/callback] Not web, redirecting to /');
         router.replace('/');
         return;
       }
 
       const hash = window.location.hash?.slice(1);
       const search = window.location.search?.slice(1);
-
-      console.log('[auth/callback] hash present:', !!hash, 'search present:', !!search);
 
       const parseParams = (str: string) => {
         const params = new URLSearchParams(str);
@@ -48,13 +45,11 @@ export default function AuthCallbackScreen() {
       const refresh_token = fromHash.refresh_token ?? fromSearch.refresh_token;
 
       if (!access_token || !refresh_token) {
-        console.log('[auth/callback] No tokens found, redirecting to /');
         router.replace('/');
         return;
       }
 
       try {
-        console.log('[auth/callback] Setting session');
         const { error: sessionError } = await supabase.auth.setSession({
           access_token,
           refresh_token,
@@ -69,10 +64,8 @@ export default function AuthCallbackScreen() {
         useAuthStore.setState({ session: data.session });
         await fetchProfile();
 
-        console.log('[auth/callback] Session set, redirecting to /');
         router.replace('/');
       } catch (e) {
-        console.error('[auth/callback] Error:', e);
         setError(e instanceof Error ? e.message : 'Sign-in failed');
       }
     };

@@ -17,6 +17,7 @@ interface AuthState {
   loading: boolean;
 
   initialize: () => Promise<void>;
+  dispose: () => void;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -27,10 +28,17 @@ interface AuthState {
   updateProfile: (data: {
     display_name: string;
     location: string;
-    bio?: string;
+    bio?: string | null;
+    position?: string | null;
+    birth_year?: number | null;
   }) => Promise<void>;
   retryProfileCreation: () => Promise<void>;
 }
+
+// Module-level guards so initialize() is idempotent across fast-refresh /
+// double-mounts and the auth listener subscription is disposable on unmount.
+let authInitialized = false;
+let authSubscription: { unsubscribe: () => void } | null = null;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -42,6 +50,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: false,
 
   initialize: async () => {
+    if (authInitialized) return;
+    authInitialized = true;
+
     try {
       const {
         data: { session },
@@ -54,18 +65,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         set({ profileStatus: 'ready', profile: null });
       }
-    } catch (err) {
-      console.error('Auth initialization error:', err);
+    } catch {
       set({ profileStatus: 'error' });
     } finally {
       set({ authLoaded: true });
     }
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       set({ session, pendingEmailVerification: false });
       if (session?.user) {
         set({ profileCreationAttempted: false, profileStatus: 'loading' });
-        await get().fetchProfile();
+        void Promise.resolve()
+          .then(() => get().fetchProfile())
+          .catch(() => {
+            // fetchProfile sets profileStatus before throwing.
+          });
       } else {
         set({
           profile: null,
@@ -74,6 +88,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
     });
+    authSubscription = data.subscription;
+  },
+
+  dispose: () => {
+    authSubscription?.unsubscribe();
+    authSubscription = null;
+    authInitialized = false;
   },
 
   signUp: async (email, password, fullName) => {
@@ -92,8 +113,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error;
 
       if (data.session) {
-        set({ session: data.session, pendingEmailVerification: false });
-        set({ profileStatus: 'loading' });
+        set({ session: data.session, pendingEmailVerification: false, profileStatus: 'loading' });
         await get().fetchProfile();
       } else if (data.user) {
         set({ pendingEmailVerification: true });
@@ -111,8 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password,
       });
       if (error) throw error;
-      set({ session: data.session, pendingEmailVerification: false });
-      set({ profileStatus: 'loading' });
+      set({ session: data.session, pendingEmailVerification: false, profileStatus: 'loading' });
       await get().fetchProfile();
     } finally {
       set({ loading: false });
@@ -239,31 +258,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (!data.url) throw new Error('No auth URL returned');
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (result?.type === 'success' && result.url) {
-        const hash = result.url.split('#')[1];
-        if (hash) {
-          const params = new URLSearchParams(hash);
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-          if (accessToken && refreshToken) {
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            if (sessionError) throw sessionError;
-            const { data: sessionData } = await supabase.auth.getSession();
-            set({ session: sessionData.session });
-            set({ profileStatus: 'loading' });
-            await get().fetchProfile();
-          }
-        }
+      if (!result || result.type !== 'success' || !result.url) {
+        // User cancelled or the OS dismissed the auth session — surface so the
+        // caller can show feedback instead of silently doing nothing.
+        if (result?.type === 'cancel' || result?.type === 'dismiss') return;
+        throw new Error('Google sign-in did not complete.');
       }
+
+      const hash = result.url.split('#')[1];
+      const params = new URLSearchParams(hash ?? '');
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (!accessToken || !refreshToken) {
+        throw new Error('Google sign-in returned no tokens.');
+      }
+
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) throw sessionError;
+      const { data: sessionData } = await supabase.auth.getSession();
+      set({ session: sessionData.session, profileStatus: 'loading' });
+      await get().fetchProfile();
     } finally {
       set({ loading: false });
     }
   },
 
-  updateProfile: async ({ display_name, location, bio }) => {
+  updateProfile: async ({
+    display_name,
+    location,
+    bio,
+    position,
+    birth_year,
+  }) => {
     set({ loading: true });
     try {
       const session = get().session;
@@ -275,6 +304,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         updated_at: new Date().toISOString(),
       };
       if (bio !== undefined) updates.bio = bio;
+      if (position !== undefined) updates.position = position;
+      if (birth_year !== undefined) updates.birth_year = birth_year;
 
       const { error } = await supabase
         .from('profiles')

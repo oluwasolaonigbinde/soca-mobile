@@ -1,3 +1,4 @@
+import { buildAvatarImageUri } from '@/lib/avatar-url';
 import { supabase } from '@/lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -27,8 +28,6 @@ export async function uploadAvatar() {
   if (pickerResult.canceled) {
     return null;
   }
-  console.log('[avatars] picker result', { uri: pickerResult.assets[0]?.uri });
-
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   if (!userData.user) throw new Error('You must be logged in to upload an avatar.');
@@ -37,7 +36,6 @@ export async function uploadAvatar() {
   const extension = getFileExtension(asset.uri, asset.mimeType);
   const filePath = `${userData.user.id}/${Date.now()}.${extension}`;
 
-  console.log('[avatars] before fetch', { uri: asset.uri });
   const imageResponse = await fetch(asset.uri);
   const imageBlob = await imageResponse.blob();
 
@@ -49,19 +47,18 @@ export async function uploadAvatar() {
     });
 
   if (uploadError) throw uploadError;
-  console.log('[avatars] storage upload ok', { filePath });
 
   const {
     data: { publicUrl },
   } = supabase.storage.from('avatars').getPublicUrl(filePath);
+  const updatedAt = new Date().toISOString();
 
   const { error: profileError } = await supabase
     .from('profiles')
-    .update({ avatar_url: publicUrl })
+    .update({ avatar_url: publicUrl, updated_at: updatedAt })
     .eq('id', userData.user.id);
 
   if (profileError) throw profileError;
-  console.log('[avatars] profile update ok');
 
-  return `${publicUrl}?t=${Date.now()}`;
+  return buildAvatarImageUri(publicUrl, updatedAt);
 }

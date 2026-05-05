@@ -37,7 +37,7 @@ This file prevents re-deciding. If an implementation choice changes, update this
 - RLS is enabled on all tables that contain user content.
 - Storage buckets:
   - `avatars` (profile images)
-  - `videos` (highlight uploads and challenge submissions)
+  - `videos` (highlight uploads and challenge submissions; public in the current playback implementation)
 
 ### Visibility
 - Profiles are public pages (basic public info + highlights).
@@ -55,7 +55,7 @@ This file prevents re-deciding. If an implementation choice changes, update this
   - Recency (upload date)
   - Engagement signals (likes, views)
   - Role-aware weighting (scout interactions matter more for "exposure" signals)
-- "Featured" is an admin/manual flag in V1.
+- "Featured" is admin/manual curation in V1 via `featured_items`.
 
 ### AI Assist (V1 = Assistive Intelligence)
 - V1 is NOT ML training.
@@ -102,7 +102,7 @@ Tables:
 - `conversations` (optional; or derive from messages)
 - `messages`
 - `reports` (reported content)
-- `featured_items` (optional; or flags on videos/profiles)
+- `featured_items` (admin-curated; item_type + item_id + section; ordering/scheduling; RLS read-only for app, writes via service role / admin)
 
 ### Out of scope (explicit)
 - Store publishing / TestFlight / Play Store
@@ -120,3 +120,20 @@ Tables:
 - If profile missing, perform one idempotent upsert keyed by profiles.id = auth.user.id, then refetch; if still missing → error (no loop).
 - Redirect authority: app/index.tsx only (no redirect logic in _layout.tsx).
 - Profile complete requires: role + display_name + location. Bio optional.
+- **Discovery foundation** (pre–Slice 04): `profiles` has nullable `position`, `birth_year` (no mutable `age`). Discovery uses `featured_items` table (item_type, item_id, section, sort_order, starts_at/ends_at, is_active). RLS: public read of active+in-window rows only; no INSERT/UPDATE/DELETE for anon or authenticated—writes via service role, SQL Editor, or future admin tooling.
+- **Slice 03** video playback opens a public Supabase Storage URL in the system browser from `/video/[id]` instead of embedding a native player dependency; the `videos` bucket is public in the current implementation, feed ordering is latest-first, like/view counts are computed via COUNT queries, and `video_views` permits anonymous inserts with `viewer_id = null` or authenticated inserts with `viewer_id = auth.uid()`.
+- **Slice 04** discovery filters query `profiles` directly, derive age from `birth_year`, compute popularity from follower counts plus profile views, and use `featured_items` for featured profile ordering. Explore challenge/event sections render available rows when those tables exist and otherwise stay empty until later slices add those flows.
+- **Slice 05** leaderboard score is derived live as `admin_score + (likes * 3) + views`, and each player has a single submission per challenge; resubmitting replaces the linked video and resets `admin_score` to `null` until re-reviewed.
+- **Slice 06** uses a materialized `conversations` table for one-to-one pairs with app-side sorted participant ids (`user_a`, `user_b`) to avoid duplicate threads, computes unread counts from `messages.read_at IS NULL`, and marks inbound messages as read when the thread opens.
+- **Hardening** Player profile completion now requires `position` and `birth_year` in addition to `role`, `display_name`, and `location`; non-player roles still require the lighter public profile only.
+- **Hardening** Player-only flows are enforced in both routing and mutations: only `player` profiles can upload highlight videos or submit challenge videos.
+- **Slice 07** event listings normalize the schedule field from `date`, `event_date`, or `starts_at`, sort upcoming events by soonest date first, resolve organizer names from event rows or `profiles`, and enforce one `event_interest` row per `(event_id, user_id)` with a database unique index; the app also treats duplicate-key insert races as no-ops.
+- **Slice 08** admin access is an additional capability, not a fifth platform role: the app gates `/admin/*` routes from `auth.users.app_metadata.is_admin = true`; moderation reports cover profile/video content; manual verification uses `profiles.verified` + `profiles.verified_at`; and Explore now supports a featured videos rail sourced from `featured_items`.
+- **Challenge scoring override (2026-03-10)** public challenge leaderboards are community-driven: rank by engagement score only, using `(likes * 3) + views`; `challenge_submissions.admin_score` may remain stored for future internal use but does not affect public ordering.
+- **Slice 09 (AI Assist)** feed is network-first: content from people you follow + engage with (likes, views, messages); pad with public latest when sparse; same for all roles. Discover gets a "Recommended" sort tab for suggested players you don't follow yet; Explore has no recommended section. Use existing tables only (`follows`, `video_likes`, `video_views`, `messages`, `profile_views`); no shortlists or engagement_signals.
+- **Slice 09 implementation detail** feed owner priority is weighted deterministically as follows > messages > liked videos > viewed videos, then sorted by recency within each signal strength. Discover Recommended is player-focused in the UI, excludes already-followed profiles, and ranks direct interaction signals ahead of shared position/location affinity, with popularity as fallback fill.
+- **Slice 11** visual polish is styling-only: shared blue/teal demo branding, stronger card elevation, hero gradients via `expo-linear-gradient`, larger highlight thumbnails, and refined typography/spacing were applied without changing routes, component entrypoints, hooks, or backend behavior.
+- **Slice 12 (2026-03-16)** authenticated UX refinement stays frontend-only: routes/navigation remain unchanged, player home is upload-first with no intro hero above the primary action, profile positions use a presentational abbreviation layer (`Striker -> ST`, `Goalkeeper -> GK`, etc.), highlight cards must render a real thumbnail when available or a deterministic football-themed fallback image, and challenge discovery/listing is open-first with optional submission counts derived from existing `challenge_submissions` rows when available.
+- **Client mixed posts update (2026-04-26)** `posts` is an additive umbrella feed layer for text posts and optional video attachments; `videos`, `video_likes`, `video_views`, challenge submissions, featured videos, and `/video/[id]` remain the source of truth for highlight playback and engagement. Existing videos without a linked `posts` row are rendered by the app as virtual video posts for backward compatibility.
+- **Final non-admin pass (2026-04-28)** Image/photo posts use additive `posts.image_path` plus a public `post-images` storage bucket with per-user folder write policies. Non-video text/image posts use `post_likes`; video posts continue to use `video_likes` so highlight engagement and challenge scoring remain unchanged.
+- **Admin handoff pass (2026-04-28)** Admin access remains an `is_admin` auth metadata capability. Admin entry now lives in authenticated navigation instead of the player profile hero; event creation uses admin-only `events` write policies; challenge winners are recorded as public-read `profile_achievements` and shown on player profiles. Event winner assignment remains deferred until events have submissions/participants beyond Interested.

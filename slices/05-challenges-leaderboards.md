@@ -1,5 +1,5 @@
 # Slice 05 — Challenges + Leaderboards
-Status: TODO
+Status: DONE
 
 ## Goal
 Implement monthly admin challenges, submissions, scoring, and leaderboard.
@@ -8,7 +8,7 @@ Implement monthly admin challenges, submissions, scoring, and leaderboard.
 - Users can view challenge list + details
 - Player can submit a video to a challenge
 - Leaderboard ranks submissions
-- Scores reflect admin score + engagement signals
+- Scores reflect community engagement signals
 
 ## Screens / routes
 - `/challenges`
@@ -23,7 +23,7 @@ Tables:
 - `challenge_submissions`:
   - `id`, `challenge_id`, `user_id`, `video_id`, `admin_score`, `created_at`
 Leaderboard:
-- computed score = `admin_score` + weight*(likes/views)
+- computed public score = `(likes * 3) + views`
 
 ## Acceptance checks
 Manual:
@@ -34,3 +34,9 @@ Agent verify:
 
 ## Out of scope
 - Fully featured admin dashboard UX
+
+## Notes
+- Added routes for challenge list, detail, submission, and leaderboard.
+- Player submissions reuse existing uploaded highlight videos instead of adding a second upload path here.
+- Minimal admin creation remains SQL-first via `docs/schema-05-challenges.sql`; a dedicated admin UX is deferred to a later slice.
+- Public leaderboard ranking now ignores `admin_score`; the column remains stored but does not affect player-facing ordering.

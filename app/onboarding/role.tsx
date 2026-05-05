@@ -1,15 +1,10 @@
-import { Button } from '@/components/ui/Button';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { useAuthStore } from '@/store/auth';
-import type { UserRole } from '@/types/database';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
-// ---------------------------------------------------------------------------
-// Role options
-// ---------------------------------------------------------------------------
+import { Button, Screen, StateCard, Surface, Text, theme } from '@/components/ui';
+import { useAuthStore } from '@/store/auth';
+import type { UserRole } from '@/types/database';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
   {
@@ -34,10 +29,6 @@ const ROLES: { value: UserRole; label: string; description: string }[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
-
 export default function RoleSelectionScreen() {
   const router = useRouter();
   const updateRole = useAuthStore((s) => s.updateRole);
@@ -57,98 +48,68 @@ export default function RoleSelectionScreen() {
   };
 
   return (
-    <Screen style={styles.container}>
-      <Text variant="heading" style={styles.title}>
-        Choose Your Role
-      </Text>
-      <Text variant="body" style={styles.subtitle}>
-        This cannot be changed later.
-      </Text>
+    <Screen style={styles.screen}>
+      <Surface elevated style={styles.card}>
+        <Text variant="overline" style={styles.kicker}>
+          ROLE SELECTION
+        </Text>
+        <Text variant="heading">Choose your role</Text>
+        <Text variant="body" style={styles.subtitle}>
+          Pick your role. This cannot be changed later.
+        </Text>
 
-      {error && (
-        <View style={styles.errorBox}>
-          <Text variant="caption" style={styles.errorText}>
-            {error}
-          </Text>
-        </View>
-      )}
+        {error ? <StateCard title={error} tone="danger" /> : null}
 
-      <View style={styles.roles}>
-        {ROLES.map((role) => {
-          const active = selected === role.value;
-          return (
-            <Pressable
-              key={role.value}
-              style={[styles.card, active && styles.cardActive]}
-              onPress={() => setSelected(role.value)}
-            >
-              <Text
-                variant="subheading"
-                style={[styles.cardLabel, active && styles.cardLabelActive]}
+        <View style={styles.roles}>
+          {ROLES.map((role) => {
+            const active = selected === role.value;
+            return (
+              <Pressable
+                key={role.value}
+                onPress={() => setSelected(role.value)}
               >
-                {role.label}
-              </Text>
-              <Text variant="caption" style={styles.cardDesc}>
-                {role.description}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+                <Surface tone={active ? 'tint' : 'default'} elevated style={styles.roleCard}>
+                  <Text variant="title">{role.label}</Text>
+                  <Text variant="caption" style={styles.roleDescription}>
+                    {role.description}
+                  </Text>
+                </Surface>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      <Button
-        title={loading ? 'Saving\u2026' : 'Continue'}
-        onPress={onConfirm}
-        disabled={!selected || loading}
-      />
+        <Button
+          title={loading ? 'Saving...' : 'Continue'}
+          onPress={onConfirm}
+          disabled={!selected || loading}
+        />
+      </Surface>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  subtitle: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#DC2626',
-  },
-  roles: {
-    gap: 12,
-    marginBottom: 24,
+    paddingHorizontal: theme.spacing.xxl,
   },
   card: {
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    padding: 16,
+    gap: theme.spacing.md,
   },
-  cardActive: {
-    borderColor: '#111',
-    backgroundColor: '#F9FAFB',
+  kicker: {
+    color: theme.colors.primary,
   },
-  cardLabel: {
-    marginBottom: 2,
+  subtitle: {
+    color: theme.colors.textMuted,
   },
-  cardLabelActive: {
-    color: '#111',
+  roles: {
+    gap: theme.spacing.sm,
   },
-  cardDesc: {
-    color: '#666',
+  roleCard: {
+    gap: 4,
+  },
+  roleDescription: {
+    color: theme.colors.textMuted,
   },
 });

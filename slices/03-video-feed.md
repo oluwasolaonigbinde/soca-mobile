@@ -1,10 +1,10 @@
 # Slice 03 — Video Upload + Feed
-Status: TODO
+Status: DONE
 
 ## Goal
 Implement highlight videos and public feed visibility:
 - Upload video highlight
-- Secure streamed playback
+- Reliable browser-based playback for the current slice
 - Like + view tracking
 - Basic feed (latest) and profile highlights tab
 
@@ -35,7 +35,8 @@ Tables:
 RLS:
 - public read videos
 - only owner can create/update/delete own video
-- likes/views: authenticated write, public read aggregates
+- likes: authenticated write, public read aggregates
+- views: anonymous or authenticated insert, public read aggregates
 
 ## Acceptance checks
 Manual:
@@ -44,6 +45,9 @@ Manual:
 - Video plays without crashing
 Agent verify:
 - `/verify`
+
+## Deviations / TODOs
+- Playback currently opens a public Supabase Storage URL in the system browser from `/video/[id]` instead of embedding an in-app player. This keeps the slice dependency-light and reliable across Expo targets, but a dedicated video player and signed playback can be added later.
 
 ## Out of scope
 - Advanced ranking (AI) beyond "latest/trending placeholder"

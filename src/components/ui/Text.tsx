@@ -2,13 +2,26 @@ import React from 'react';
 import {
     Text as RNText,
     StyleSheet,
+    type StyleProp,
     type TextProps as RNTextProps,
+    type TextStyle,
 } from 'react-native';
 
-export type TextVariant = 'heading' | 'subheading' | 'body' | 'caption';
+import { theme } from './theme';
+
+export type TextVariant =
+  | 'hero'
+  | 'heading'
+  | 'subheading'
+  | 'title'
+  | 'body'
+  | 'label'
+  | 'caption'
+  | 'overline';
 
 export interface TextProps extends RNTextProps {
   variant?: TextVariant;
+  style?: StyleProp<TextStyle>;
 }
 
 export function Text({ variant = 'body', style, ...rest }: TextProps) {
@@ -17,29 +30,33 @@ export function Text({ variant = 'body', style, ...rest }: TextProps) {
 
 const styles = StyleSheet.create({
   base: {
-    color: '#111',
+    color: theme.colors.text,
   },
 });
 
 const variantStyles = StyleSheet.create({
+  hero: {
+    ...theme.typography.hero,
+  },
   heading: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 34,
+    ...theme.typography.heading,
   },
   subheading: {
-    fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 26,
+    ...theme.typography.subheading,
+  },
+  title: {
+    ...theme.typography.title,
   },
   body: {
-    fontSize: 16,
-    fontWeight: '400',
-    lineHeight: 22,
+    ...theme.typography.body,
+  },
+  label: {
+    ...theme.typography.label,
   },
   caption: {
-    fontSize: 13,
-    fontWeight: '400',
-    lineHeight: 18,
+    ...theme.typography.caption,
+  },
+  overline: {
+    ...theme.typography.overline,
   },
 });

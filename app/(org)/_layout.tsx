@@ -1,5 +1,10 @@
+import { RoleGate } from '@/components/auth/RoleGate';
 import { Stack } from 'expo-router';
 
 export default function OrgLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <RoleGate allowedRoles={['org']}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </RoleGate>
+  );
 }

@@ -42,3 +42,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# agent / IDE tooling state (not part of the app)
+.claude/
+.cursor/mcp.json
+.cursor/plans/

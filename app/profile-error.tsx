@@ -1,9 +1,8 @@
-import { Button } from '@/components/ui/Button';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { useAuthStore } from '@/store/auth';
-import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+
+import { Button, Screen, Surface, Text, theme } from '@/components/ui';
+import { useAuthStore } from '@/store/auth';
 
 export default function ProfileErrorScreen() {
   const router = useRouter();
@@ -22,45 +21,49 @@ export default function ProfileErrorScreen() {
   };
 
   return (
-    <Screen style={styles.container}>
-      <Text variant="heading" style={styles.title}>
-        Profile Setup Failed
-      </Text>
-      <Text variant="body" style={styles.subtitle}>
-        We couldn&apos;t create your profile. Please check your connection and
-        try again.
-      </Text>
+    <Screen style={styles.screen}>
+      <Surface elevated style={styles.card}>
+        <Text variant="overline" style={styles.kicker}>
+          PROFILE ERROR
+        </Text>
+        <Text variant="heading">Profile setup failed</Text>
+        <Text variant="body" style={styles.subtitle}>
+          We couldn&apos;t create your profile. Please check your connection and try again.
+        </Text>
 
-      <View style={styles.actions}>
-        <Button
-          title={loading ? 'Retrying\u2026' : 'Retry'}
-          onPress={onRetry}
-          disabled={loading}
-        />
-        <Button
-          title="Sign Out"
-          variant="outline"
-          onPress={onSignOut}
-          disabled={loading}
-        />
-      </View>
+        <View style={styles.actions}>
+          <Button
+            title={loading ? 'Retrying...' : 'Retry'}
+            onPress={onRetry}
+            disabled={loading}
+          />
+          <Button
+            title="Sign Out"
+            variant="outline"
+            onPress={onSignOut}
+            disabled={loading}
+          />
+        </View>
+      </Surface>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.xxl,
   },
-  title: {
-    marginBottom: 12,
+  card: {
+    gap: theme.spacing.md,
+  },
+  kicker: {
+    color: theme.colors.primary,
   },
   subtitle: {
-    color: '#666',
-    marginBottom: 32,
+    color: theme.colors.textMuted,
   },
   actions: {
-    gap: 12,
+    gap: theme.spacing.sm,
   },
 });

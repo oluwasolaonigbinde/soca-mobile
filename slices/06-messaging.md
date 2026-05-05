@@ -1,5 +1,5 @@
 # Slice 06 — Messaging
-Status: TODO
+Status: DONE
 
 ## Goal
 One-to-one messaging:
@@ -34,3 +34,8 @@ Agent verify:
 
 ## Out of scope
 - Media attachments in chat (Phase 2)
+
+## Notes
+- Added `/messages` and `/messages/[conversationId]` with conversation list, unread badges, and a text-only thread composer.
+- Profile pages now expose a message CTA for other users and a messages entry point for the signed-in user.
+- SQL setup is documented in `docs/schema-06-messaging.sql`; messaging stays unavailable until those tables and RLS policies are applied in Supabase.

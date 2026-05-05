@@ -7,6 +7,7 @@ This repo is built slice-by-slice using Cursor Agent (Compose/Agent), Codex CLI,
 - Decisions (do not re-litigate): `specs/decisions.md`
 - Acceptance definition: `specs/acceptance.md`
 - Execution plan: `slices/*.md`
+- Supabase project for this repo: use the `supabase` MCP server scoped to project ref `hhwzcaxspfwtqmcvtswu` for schema, SQL, migrations, logs, and project queries when relevant.
 
 If any change conflicts with `specs/scope.md`, stop and propose an update to `specs/decisions.md` or the relevant slice.
 

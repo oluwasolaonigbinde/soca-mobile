@@ -1,6 +1,11 @@
+import {
+  DEMO_MODE_ENABLED,
+  listDemoFollowing,
+} from '@/lib/demo-mode';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types/database';
 import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/auth';
 
 async function fetchFollowing(userId: string): Promise<Profile[]> {
   const { data, error } = await supabase
@@ -22,9 +27,18 @@ async function fetchFollowing(userId: string): Promise<Profile[]> {
 }
 
 export function useFollowing(userId: string | undefined) {
+  const currentUserId = useAuthStore((state) => state.session?.user?.id);
+  const currentProfile = useAuthStore((state) => state.profile);
+
   return useQuery({
     queryKey: ['following', userId],
-    queryFn: () => fetchFollowing(userId!),
+    queryFn: async () => {
+      if (DEMO_MODE_ENABLED && userId) {
+        return listDemoFollowing(userId, currentUserId, currentProfile);
+      }
+
+      return fetchFollowing(userId!);
+    },
     enabled: !!userId,
   });
 }

@@ -1,18 +1,9 @@
 import { isProfileComplete } from '@/lib/profile';
+import { getRoleHome } from '@/lib/roles';
 import { useAuthStore } from '@/store/auth';
-import type { UserRole } from '@/types/database';
 import type { Href } from 'expo-router';
 import { Redirect } from 'expo-router';
-
-function getRoleHome(role: UserRole) {
-  const map = {
-    player: '/(player)/home',
-    scout: '/(scout)/home',
-    club: '/(club)/home',
-    org: '/(org)/home',
-  } as const;
-  return map[role];
-}
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 /**
  * Sole redirect authority. Implements Entry Routing Rule and state machine.
@@ -24,12 +15,12 @@ export default function Index() {
   const profileStatus = useAuthStore((s) => s.profileStatus);
   const authLoaded = useAuthStore((s) => s.authLoaded);
 
-  if (!authLoaded) {
-    return null;
-  }
-
-  if (profileStatus === 'loading' || profileStatus === 'missing') {
-    return null;
+  if (!authLoaded || profileStatus === 'loading' || profileStatus === 'missing') {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#00FF88" />
+      </View>
+    );
   }
 
   if (profileStatus === 'error') {
@@ -50,3 +41,12 @@ export default function Index() {
 
   return <Redirect href={getRoleHome(profile.role) as Href} />;
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    backgroundColor: '#090C0A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

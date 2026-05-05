@@ -1,5 +1,10 @@
+import { RoleGate } from '@/components/auth/RoleGate';
 import { Stack } from 'expo-router';
 
 export default function ScoutLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <RoleGate allowedRoles={['scout']}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </RoleGate>
+  );
 }

@@ -50,7 +50,7 @@ Roles determine permissions and visibility within a single unified platform.
 
 ## 5. Video Upload & Playback
 - Video upload for highlight content
-- Secure, streamed video playback
+- Current implementation uses browser-opened playback via a public storage URL; dedicated in-app secure playback is deferred
 - Basic metadata storage (duration, upload date)
 
 ---
@@ -58,7 +58,7 @@ Roles determine permissions and visibility within a single unified platform.
 ## 6. Discovery & Explore
 
 ### Player Discovery
-- Search and filtering by position, age, location, and role
+- Search and filtering by position, derived age from birth year, location, and role
 - Sorted discovery views (latest, featured, popular)
 
 ### Explore Page

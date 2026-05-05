@@ -1,101 +1,22 @@
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
+import { UserListScreen } from '@/components/UserListScreen';
 import { useFollowing } from '@/hooks/useFollowing';
 import { useAuthStore } from '@/store/auth';
-import { useRouter } from 'expo-router';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
 
 export default function FollowingScreen() {
-  const router = useRouter();
   const currentUserId = useAuthStore((s) => s.session?.user?.id);
-  const { data: following, isLoading, error } = useFollowing(currentUserId);
-
-  if (isLoading) {
-    return (
-      <Screen style={styles.centered}>
-        <ActivityIndicator size="large" />
-      </Screen>
-    );
-  }
-
-  if (error) {
-    return (
-      <Screen style={styles.centered}>
-        <Text variant="body">Failed to load following.</Text>
-      </Screen>
-    );
-  }
-
-  if (!following?.length) {
-    return (
-      <Screen style={styles.centered}>
-        <Text variant="body" style={styles.emptyText}>
-          Not following anyone yet.
-        </Text>
-      </Screen>
-    );
-  }
+  const { data, isLoading, error } = useFollowing(currentUserId);
 
   return (
-    <Screen>
-      <FlatList
-        data={following}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.row}
-            onPress={() => router.push(`/profile/${item.id}`)}
-          >
-            {item.avatar_url ? (
-              <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]} />
-            )}
-            <Text variant="body" style={styles.name}>
-              {item.display_name || item.full_name || 'Unknown'}
-            </Text>
-          </Pressable>
-        )}
-      />
-    </Screen>
+    <UserListScreen
+      data={data}
+      isLoading={isLoading}
+      error={error}
+      errorLabel="Unable to load following right now."
+      errorDescription="Please try again in a moment."
+      errorIcon="account-multiple-outline"
+      emptyLabel="Not following anyone yet."
+      emptyDescription="Profiles you follow will appear here for quick access."
+      emptyIcon="account-search-outline"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#666',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#eee',
-    marginRight: 12,
-  },
-  avatarPlaceholder: {
-    backgroundColor: '#ddd',
-  },
-  name: {
-    flex: 1,
-  },
-});

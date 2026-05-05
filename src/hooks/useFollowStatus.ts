@@ -1,19 +1,10 @@
-import { follow as followUser, unfollow as unfollowUser } from '@/lib/follows';
+import {
+  follow as followUser,
+  isFollowing as checkIsFollowing,
+  unfollow as unfollowUser,
+} from '@/lib/follows';
 import { useAuthStore } from '@/store/auth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-
-function checkIsFollowing(followerId: string | undefined, followeeId: string | undefined): Promise<boolean> {
-  if (!followerId || !followeeId) return Promise.resolve(false);
-
-  return supabase
-    .from('follows')
-    .select('follower_id')
-    .eq('follower_id', followerId)
-    .eq('followee_id', followeeId)
-    .maybeSingle()
-    .then(({ data }) => !!data);
-}
 
 export function useFollowStatus(profileId: string | undefined) {
   const currentUserId = useAuthStore((s) => s.session?.user?.id);
@@ -21,7 +12,10 @@ export function useFollowStatus(profileId: string | undefined) {
 
   const { data: isFollowing, isLoading: isQueryLoading } = useQuery({
     queryKey: ['followStatus', currentUserId, profileId],
-    queryFn: () => checkIsFollowing(currentUserId, profileId),
+    queryFn: () =>
+      currentUserId && profileId
+        ? checkIsFollowing(currentUserId, profileId)
+        : Promise.resolve(false),
     enabled: !!currentUserId && !!profileId,
   });
 
@@ -36,7 +30,15 @@ export function useFollowStatus(profileId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', profileId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['followStatus', currentUserId, profileId] });
+      queryClient.invalidateQueries({ queryKey: ['followers', profileId] });
+      queryClient.invalidateQueries({ queryKey: ['followers', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['following', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['discover'] });
+      queryClient.invalidateQueries({ queryKey: ['explore'] });
     },
   });
 

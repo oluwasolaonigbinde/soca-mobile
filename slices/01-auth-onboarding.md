@@ -28,7 +28,7 @@ Tables:
   - `display_name`
   - `bio`
   - `location`
-  - role fields (nullable): position, age, club_name, scout_org, etc.
+  - role fields (nullable): position, birth_year, club_name, scout_org, etc.
 RLS:
 - user can update own profile
 - public can read public profile fields

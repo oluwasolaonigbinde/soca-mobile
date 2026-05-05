@@ -1,5 +1,5 @@
 # Slice 07 — Events
-Status: TODO
+Status: DONE
 
 ## Goal
 Implement event listings + detail pages + Interested interaction.
@@ -33,3 +33,8 @@ Agent verify:
 
 ## Out of scope
 - Ticketing/RSVP monetization (Phase 2)
+
+## Notes
+- Implemented `/events` and `/events/[id]` with list, detail, and Interested toggle behavior.
+- Explore event cards now link into event details, and each role home screen shows an upcoming-events preview card plus an Events shortcut.
+- Added `docs/schema-07-events.sql` with the database-level dedupe fix for `event_interest (event_id, user_id)` plus the core events/event_interest schema and RLS policies.

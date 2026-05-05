@@ -1,6 +1,18 @@
+export { AppHeader, type AppHeaderProps } from './AppHeader';
+export { AppShell, type AppShellProps } from './AppShell';
+export { AuthCard, type AuthCardProps } from './AuthCard';
+export { Avatar, type AvatarProps } from './Avatar';
+export { BrandWordmark, type BrandWordmarkProps } from './BrandWordmark';
 export { Button, type ButtonProps, type ButtonVariant } from './Button';
+export { Chip, type ChipProps } from './Chip';
+export { GradientCard, type GradientCardProps } from './GradientCard';
 export { Input, type InputProps } from './Input';
-
+export { MetricPill, type MetricPillProps } from './MetricPill';
 export { Screen, type ScreenProps } from './Screen';
+export { SearchInput, type SearchInputProps } from './SearchInput';
+export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
+export { StateCard, type StateCardProps } from './StateCard';
+export { Surface, type SurfaceProps, type SurfaceTone } from './Surface';
+export { TabSwitch, type TabSwitchProps, type TabOption } from './TabSwitch';
 export { Text, type TextProps, type TextVariant } from './Text';
-
+export { theme, alpha, type ThemeColor } from './theme';

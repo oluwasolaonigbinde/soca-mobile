@@ -1,5 +1,10 @@
+import { RoleGate } from '@/components/auth/RoleGate';
 import { Stack } from 'expo-router';
 
 export default function PlayerLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <RoleGate allowedRoles={['player']}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </RoleGate>
+  );
 }

@@ -1,18 +1,12 @@
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { useAuthStore } from '@/store/auth';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
+import { AuthCard, Button, Input, Screen, StateCard, Text, theme } from '@/components/ui';
+import { useAuthStore } from '@/store/auth';
 
 const schema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -22,17 +16,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
-
 export default function SignupScreen() {
   const router = useRouter();
   const signUp = useAuthStore((s) => s.signUp);
   const loading = useAuthStore((s) => s.loading);
-  const pendingEmailVerification = useAuthStore(
-    (s) => s.pendingEmailVerification,
-  );
+  const pendingEmailVerification = useAuthStore((s) => s.pendingEmailVerification);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -58,99 +46,99 @@ export default function SignupScreen() {
   };
 
   return (
-    <Screen style={styles.container}>
-      <Text variant="heading" style={styles.title}>
-        Create Account
-      </Text>
+    <Screen style={styles.screen}>
+      <AuthCard style={styles.card}>
+        <Text variant="overline" style={styles.kicker}>
+          CREATE ACCOUNT
+        </Text>
+        <Text variant="heading" style={styles.headline}>
+          SIGN UP
+        </Text>
+        <Text variant="body" style={styles.subtitle}>
+          Create your account to get started.
+        </Text>
 
-      {error && (
-        <View style={styles.errorBox}>
-          <Text variant="caption" style={styles.errorText}>
-            {error}
-          </Text>
-        </View>
-      )}
-
-      {pendingEmailVerification && (
-        <View style={styles.infoBox}>
-          <Text variant="caption" style={styles.infoText}>
-            Account created. Check your email to verify your account, then log
-            in.
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.form}>
-        <View>
-          <Controller
-            control={control}
-            name="fullName"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                placeholder="Full Name"
-                autoCapitalize="words"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
+        {error ? <StateCard title={error} tone="danger" /> : null}
+        {pendingEmailVerification ? (
+          <StateCard
+            title="Account created"
+            description="Check your email to verify your account, then log in."
+            tone="tint"
           />
-          {errors.fullName && (
-            <Text variant="caption" style={styles.fieldError}>
-              {errors.fullName.message}
-            </Text>
-          )}
-        </View>
+        ) : null}
 
-        <View>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                placeholder="Email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
+        <View style={styles.form}>
+          <View>
+            <Controller
+              control={control}
+              name="fullName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  placeholder="Full Name"
+                  autoCapitalize="words"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+            {errors.fullName ? (
+              <Text variant="caption" style={styles.fieldError}>
+                {errors.fullName.message}
+              </Text>
+            ) : null}
+          </View>
+
+          <View>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  placeholder="Email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+            {errors.email ? (
+              <Text variant="caption" style={styles.fieldError}>
+                {errors.email.message}
+              </Text>
+            ) : null}
+          </View>
+
+          <View>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  placeholder="Password"
+                  secureTextEntry
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+            {errors.password ? (
+              <Text variant="caption" style={styles.fieldError}>
+                {errors.password.message}
+              </Text>
+            ) : null}
+          </View>
+
+          <Button
+            title={loading ? 'Creating account...' : 'Sign Up'}
+            onPress={handleSubmit(onSubmit)}
+            disabled={loading}
           />
-          {errors.email && (
-            <Text variant="caption" style={styles.fieldError}>
-              {errors.email.message}
-            </Text>
-          )}
         </View>
-
-        <View>
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                placeholder="Password"
-                secureTextEntry
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.password && (
-            <Text variant="caption" style={styles.fieldError}>
-              {errors.password.message}
-            </Text>
-          )}
-        </View>
-
-        <Button
-          title={loading ? 'Creating account\u2026' : 'Sign Up'}
-          onPress={handleSubmit(onSubmit)}
-          disabled={loading}
-        />
-      </View>
+      </AuthCard>
 
       <Link href="/auth/login" style={styles.link}>
         <Text variant="caption" style={styles.linkText}>
@@ -162,44 +150,36 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.xxl,
+    gap: theme.spacing.lg,
   },
-  title: {
-    marginBottom: 24,
+  card: {
+    gap: theme.spacing.lg,
   },
-  errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+  kicker: {
+    color: theme.colors.accent,
   },
-  errorText: {
-    color: '#DC2626',
+  headline: {
+    color: theme.colors.textPrimary,
+    letterSpacing: 0.5,
   },
-  infoBox: {
-    backgroundColor: '#DBEAFE',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  infoText: {
-    color: '#1D4ED8',
+  subtitle: {
+    color: theme.colors.textMuted,
   },
   form: {
-    gap: 16,
+    gap: theme.spacing.md,
   },
   fieldError: {
-    color: '#DC2626',
-    marginTop: 4,
-    marginLeft: 4,
+    color: theme.colors.danger,
+    marginTop: theme.spacing.xs,
+    marginLeft: theme.spacing.xs,
   },
   link: {
-    marginTop: 24,
     alignSelf: 'center',
   },
   linkText: {
-    color: '#2563EB',
+    color: theme.colors.accent,
   },
 });

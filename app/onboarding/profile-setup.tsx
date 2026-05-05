@@ -1,10 +1,3 @@
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { useAuthStore } from '@/store/auth';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
@@ -14,23 +7,17 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { z } from 'zod';
+import { useRouter } from 'expo-router';
+import { zodResolver } from '@hookform/resolvers/zod';
 
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
-
-const schema = z.object({
-  display_name: z.string().min(1, 'Display name is required'),
-  location: z.string().min(1, 'Location is required'),
-  bio: z.string().optional(),
-});
-
-type FormData = z.infer<typeof schema>;
-
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
+import { Button, Input, Screen, StateCard, Surface, Text, theme } from '@/components/ui';
+import {
+  buildProfileFormSchema,
+  getProfileFormDefaults,
+  mapProfileFormValuesToUpdate,
+  type ProfileFormValues,
+} from '@/lib/profile-form';
+import { useAuthStore } from '@/store/auth';
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
@@ -38,28 +25,21 @@ export default function ProfileSetupScreen() {
   const profile = useAuthStore((s) => s.profile);
   const loading = useAuthStore((s) => s.loading);
   const [error, setError] = useState<string | null>(null);
+  const role = profile?.role;
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      display_name: profile?.full_name ?? profile?.display_name ?? '',
-      location: profile?.location ?? '',
-      bio: profile?.bio ?? '',
-    },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(buildProfileFormSchema(role)),
+    defaultValues: getProfileFormDefaults(profile),
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: ProfileFormValues) => {
     setError(null);
     try {
-      await updateProfile({
-        display_name: data.display_name,
-        location: data.location,
-        bio: data.bio,
-      });
+      await updateProfile(mapProfileFormValuesToUpdate(data));
       router.replace('/');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
@@ -72,91 +52,134 @@ export default function ProfileSetupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboard}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text variant="heading" style={styles.title}>
-            Complete Your Profile
-          </Text>
-          <Text variant="body" style={styles.subtitle}>
-            Add your display name and location to get started.
-          </Text>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Surface elevated style={styles.card}>
+            <Text variant="overline" style={styles.kicker}>
+              PROFILE SETUP
+            </Text>
+            <Text variant="heading">Complete your profile</Text>
+            <Text variant="body" style={styles.subtitle}>
+              {role === 'player'
+                ? 'Add your details to unlock discovery.'
+                : 'Add your profile details to get started.'}
+            </Text>
 
-          {error && (
-            <View style={styles.errorBox}>
-              <Text variant="caption" style={styles.errorText}>
-                {error}
-              </Text>
-            </View>
-          )}
+            {error ? <StateCard title={error} tone="danger" /> : null}
 
-          <View style={styles.form}>
-            <View>
-              <Controller
-                control={control}
-                name="display_name"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Display Name"
-                    autoCapitalize="words"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
+            <View style={styles.form}>
+              <View>
+                <Controller
+                  control={control}
+                  name="display_name"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Display Name"
+                      autoCapitalize="words"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                {errors.display_name ? (
+                  <Text variant="caption" style={styles.fieldError}>
+                    {errors.display_name.message}
+                  </Text>
+                ) : null}
+              </View>
+
+              {role === 'player' ? (
+                <>
+                  <View>
+                    <Controller
+                      control={control}
+                      name="position"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                          placeholder="Playing Position"
+                          autoCapitalize="words"
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          value={value ?? ''}
+                        />
+                      )}
+                    />
+                    {errors.position ? (
+                      <Text variant="caption" style={styles.fieldError}>
+                        {errors.position.message}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  <View>
+                    <Controller
+                      control={control}
+                      name="birth_year"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                          placeholder="Birth Year"
+                          keyboardType="number-pad"
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          value={value ?? ''}
+                        />
+                      )}
+                    />
+                    {errors.birth_year ? (
+                      <Text variant="caption" style={styles.fieldError}>
+                        {errors.birth_year.message}
+                      </Text>
+                    ) : null}
+                  </View>
+                </>
+              ) : null}
+
+              <View>
+                <Controller
+                  control={control}
+                  name="location"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Location"
+                      autoCapitalize="words"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
+                />
+                {errors.location ? (
+                  <Text variant="caption" style={styles.fieldError}>
+                    {errors.location.message}
+                  </Text>
+                ) : null}
+              </View>
+
+              <View>
+                <Controller
+                  control={control}
+                  name="bio"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Bio (optional)"
+                      multiline
+                      numberOfLines={3}
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value ?? ''}
+                      style={styles.multiline}
+                    />
+                  )}
+                />
+              </View>
+
+              <Button
+                title={loading ? 'Saving...' : 'Continue'}
+                onPress={handleSubmit(onSubmit)}
+                disabled={loading}
               />
-              {errors.display_name && (
-                <Text variant="caption" style={styles.fieldError}>
-                  {errors.display_name.message}
-                </Text>
-              )}
             </View>
-
-            <View>
-              <Controller
-                control={control}
-                name="location"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Location"
-                    autoCapitalize="words"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
-              {errors.location && (
-                <Text variant="caption" style={styles.fieldError}>
-                  {errors.location.message}
-                </Text>
-              )}
-            </View>
-
-            <View>
-              <Controller
-                control={control}
-                name="bio"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder="Bio (optional)"
-                    multiline
-                    numberOfLines={3}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value ?? ''}
-                  />
-                )}
-              />
-            </View>
-
-            <Button
-              title={loading ? 'Saving\u2026' : 'Continue'}
-              onPress={handleSubmit(onSubmit)}
-              disabled={loading}
-            />
-          </View>
+          </Surface>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -173,31 +196,29 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: theme.spacing.xxxl,
   },
-  title: {
-    marginBottom: 8,
+  card: {
+    gap: theme.spacing.md,
+  },
+  kicker: {
+    color: theme.colors.primary,
   },
   subtitle: {
-    color: '#666',
-    marginBottom: 24,
-  },
-  errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#DC2626',
+    color: theme.colors.textMuted,
   },
   form: {
-    gap: 16,
+    gap: theme.spacing.md,
   },
   fieldError: {
-    color: '#DC2626',
+    color: theme.colors.danger,
     marginTop: 4,
     marginLeft: 4,
+  },
+  multiline: {
+    minHeight: 110,
+    textAlignVertical: 'top',
+    paddingTop: theme.spacing.md,
   },
 });
