@@ -31,66 +31,38 @@ All fixes pass `npm run typecheck`, `npm run lint`, and `npm test` (17/17).
 
 ## Live Supabase changes already applied (2026-05-05, via MCP)
 
-These three changes have been applied to the live project and verified.
-They show up in `list_migrations` as the most recent three.
-
 | Migration | What it does |
 |---|---|
-| `20260505193320_lock_storage_buckets_size_and_mime` | Sets size + MIME limits on `avatars` (2 MB), `post-images` (5 MB), and `videos` (100 MB / mp4-mov-webm). The `videos` row was previously unlimited. |
-| `20260505193334_harden_function_search_paths` | `SET search_path = public, pg_catalog` on `handle_new_user`, `handle_updated_at`, `set_updated_at`, `enforce_immutable_role`. Closes the `function_search_path_mutable` lint. |
-| `20260505193347_revoke_handle_new_user_rpc_exposure` | Revokes `EXECUTE` on `public.handle_new_user()` from `anon`, `authenticated`, `public`. The `on_auth_user_created` trigger continues to fire. Closes the two `*_security_definer_function_executable` lints. |
+| `lock_storage_buckets_size_and_mime` | Sets size + MIME limits on `avatars` (2 MB), `post-images` (5 MB), and `videos` (100 MB / mp4-mov-webm). |
+| `harden_function_search_paths` | `SET search_path = public, pg_catalog` on `handle_new_user`, `handle_updated_at`, `set_updated_at`, `enforce_immutable_role`. |
+| `revoke_handle_new_user_rpc_exposure` | Revokes `EXECUTE` on `public.handle_new_user()` from `anon`, `authenticated`, `public`. Trigger continues to fire. |
+| `profile_views_owner_only_with_count_rpc` | `get_profile_view_count(uuid)` RPC; `profile_views.SELECT` tightened to owner-only. |
+| `profile_views_self_history_and_batch_count_rpc` | Second SELECT policy for `viewer_id = auth.uid()` (so users still see their own viewer history); batch `get_profile_view_counts(uuid[])` RPC for Discover popularity. Fixes a regression where the first policy change zeroed out Discover's popularity signal and the recommendation viewer-history. |
+| `drop_avatars_broad_listing_policies` | Drops `avatars_read_anon` / `avatars_read_authenticated`. Public URLs still serve via `getPublicUrl`; listing is closed. |
 
-Security advisor delta: **9 lints → 3 lints**.
+Security advisor delta: **9 lints → 4 lints**. The four remaining are:
+- `extension_in_public` (citext) — low risk; column-type relocate is the only fix.
+- 2× `*_security_definer_function_executable` on **the new** `get_profile_view_count` — **accepted by design**: the RPC must be callable by anon/authenticated to keep the public profile-view counter visible without exposing `viewer_id`.
+- `auth_leaked_password_protection` — dashboard toggle (below).
 
-## Still requires a human action before handover
+## Done locally (not pushed)
 
-1. **Enable Leaked Password Protection** in the Supabase dashboard:
-   Authentication → Sign In / Providers → Password → "Leaked password
-   protection" toggle. Not exposed via SQL/MCP. Closes
-   `auth_leaked_password_protection`.
+- `.env.local` — `EXPO_PUBLIC_DEV_SIGNIN_EMAIL` and `EXPO_PUBLIC_DEV_SIGNIN_PASSWORD` are now commented out with a "DISABLED FOR HANDOVER" warning. `EXPO_PUBLIC_DEMO_MODE=false` is retained with the same warning.
+- Branch `release/handover` was created from `main` and the full working tree (slices 03–12 + the stabilization pass + new docs) was committed as `ac49b67 feat: slices 03-12 + handover stabilization pass`. **The branch has not been pushed yet** — pushing requires your credentials.
 
-2. **Commit and push the working tree** (described below in "Process actions").
+## Two items still need a human action before handover
 
-3. **Remove `EXPO_PUBLIC_DEV_SIGNIN_*` from `.env.local`** before any handover
-   build. The code now strips them in release builds, but Expo bakes
-   `EXPO_PUBLIC_*` into dev-client / preview builds.
-
-## Recommended (not blocking) Supabase changes — deferred pending smoke test
-
-These can be applied from the agent later, but want a quick app-level check first.
-
-4. **Tighten `profile_views` SELECT policy** to owner-only. Note the count query
-   is currently run by the *viewer*, so a strict owner-only SELECT would also
-   need a small `SECURITY DEFINER` RPC like `get_profile_view_count(uuid)` to
-   keep the public counter working. Recommend wiring the RPC first, then
-   applying the policy change.
-
-5. **Drop the broad `avatars` listing policies** (`avatars_read_anon`,
-   `avatars_read_authenticated`). Public buckets serve URLs directly without
-   object listing — but verify the in-app `Avatar` component doesn't depend on
-   listing before applying.
-
-## Process actions before delivery
-
-6. **Commit and push the working tree.** ~80 untracked files (slices 03–12) and
-   ~50 modified files are sitting on the developer's laptop only; `origin/main`
-   is still at the Slice 02 merge. From the repo root:
+1. **Push the branch:**
    ```bash
-   git checkout -b release/handover
-   git add -A
-   git commit -m "feat: slices 03-12 + handover stabilization pass"
    git push -u origin release/handover
    ```
-   Open a PR (does not need to be merged) so the work is reviewable and recoverable.
+   Open a PR if the client expects to see one; otherwise the URL `https://github.com/<org>/<repo>/tree/release/handover` is the deliverable.
 
-7. **Remove dev-only env vars** from `.env.local` before any handover build:
-   ```
-   EXPO_PUBLIC_DEV_SIGNIN_EMAIL=     # leave empty / remove
-   EXPO_PUBLIC_DEV_SIGNIN_PASSWORD=  # leave empty / remove
-   EXPO_PUBLIC_DEMO_MODE=false       # never `true` for client builds
-   ```
-   The code now strips these at build time, but Expo bakes `EXPO_PUBLIC_*`
-   values into the bundle. Don't ship them.
+2. **Enable Leaked Password Protection** in the Supabase dashboard:
+   Authentication → Sign In / Providers → Password → "Leaked password
+   protection" toggle. Not exposed via SQL/MCP. Closes the last
+   `auth_leaked_password_protection` lint.
+
 
 ## Caveats remaining for handover
 

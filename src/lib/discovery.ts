@@ -167,17 +167,26 @@ async function enrichProfiles(profiles: Profile[], featuredItems: FeaturedItem[]
   if (profiles.length === 0) return [] as DiscoverProfile[];
 
   const profileIds = profiles.map((profile) => profile.id);
-  const [{ data: followerRows, error: followerError }, { data: viewRows, error: viewError }] =
-    await Promise.all([
-      supabase.from('follows').select('followee_id').in('followee_id', profileIds),
-      supabase.from('profile_views').select('profile_id').in('profile_id', profileIds),
-    ]);
+  const [
+    { data: followerRows, error: followerError },
+    { data: viewCountRows, error: viewError },
+  ] = await Promise.all([
+    supabase.from('follows').select('followee_id').in('followee_id', profileIds),
+    // profile_views.SELECT is now owner-only; use the SECURITY DEFINER batch
+    // RPC to get per-profile counts without exposing viewer_id rows.
+    supabase.rpc('get_profile_view_counts', { p_profile_ids: profileIds }),
+  ]);
 
   if (followerError) throw followerError;
   if (viewError) throw viewError;
 
   const followerCounts = buildCountMap((followerRows as RawRow[] | null) ?? [], 'followee_id');
-  const profileViewCounts = buildCountMap((viewRows as RawRow[] | null) ?? [], 'profile_id');
+  const profileViewCounts = new Map<string, number>();
+  for (const row of (viewCountRows as { profile_id: string; view_count: number | string }[] | null) ?? []) {
+    const count =
+      typeof row.view_count === 'number' ? row.view_count : Number(row.view_count) || 0;
+    profileViewCounts.set(row.profile_id, count);
+  }
   const featuredOrder = featuredItems.reduce<Map<string, number>>((map, item) => {
     map.set(item.item_id, item.sort_order);
     return map;
