@@ -1,7 +1,9 @@
 import { useAdminChallengeSubmissions, useAdminChallenges } from '@/hooks/useAdmin';
 import {
   awardChallengeWinner,
+  closeChallenge,
   createChallenge,
+  updateChallenge,
   updateChallengeSubmissionScore,
   type AdminChallengeSubmissionRecord,
 } from '@/lib/admin';
@@ -15,6 +17,8 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -43,6 +47,14 @@ export default function AdminChallengesScreen() {
     ends_at: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    month: '',
+    starts_at: '',
+    ends_at: '',
+  });
   const [scoreEdits, setScoreEdits] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -50,6 +62,18 @@ export default function AdminChallengesScreen() {
       setSelectedChallengeId(data[0].id);
     }
   }, [data, selectedChallengeId]);
+
+  useEffect(() => {
+    if (!selectedChallenge) return;
+
+    setEditForm({
+      title: selectedChallenge.title,
+      description: selectedChallenge.description ?? '',
+      month: selectedChallenge.month ?? '',
+      starts_at: selectedChallenge.starts_at ?? '',
+      ends_at: selectedChallenge.ends_at ?? '',
+    });
+  }, [selectedChallenge]);
 
   const onCreate = async () => {
     try {
@@ -75,6 +99,63 @@ export default function AdminChallengesScreen() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const refreshChallenges = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['challenges'] }),
+      queryClient.invalidateQueries({ queryKey: ['admin'] }),
+      queryClient.invalidateQueries({ queryKey: ['explore'] }),
+    ]);
+  };
+
+  const onUpdate = async () => {
+    if (!selectedChallenge) return;
+
+    try {
+      setUpdating(true);
+      await updateChallenge(selectedChallenge.id, editForm);
+      await refreshChallenges();
+      showMessage('Challenge updated', 'The public challenge details now reflect your changes.');
+    } catch (updateError) {
+      const message =
+        updateError instanceof Error ? updateError.message : 'Unable to update challenge.';
+      showMessage('Update failed', message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const runClose = async () => {
+    if (!selectedChallenge) return;
+
+    try {
+      setUpdating(true);
+      await closeChallenge(selectedChallenge.id);
+      await refreshChallenges();
+      showMessage('Challenge closed', 'New player submissions are now disabled.');
+    } catch (closeError) {
+      const message =
+        closeError instanceof Error ? closeError.message : 'Unable to close challenge.';
+      showMessage('Close failed', message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const onClose = () => {
+    if (!selectedChallenge) return;
+    const message = `Close “${selectedChallenge.title}” now? This prevents new submissions.`;
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) void runClose();
+      return;
+    }
+
+    Alert.alert('Close challenge?', message, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Close challenge', style: 'destructive', onPress: () => void runClose() },
+    ]);
   };
 
   const onScoreSubmission = async (submission: AdminChallengeSubmissionRecord) => {
@@ -202,7 +283,7 @@ export default function AdminChallengesScreen() {
                     {[challenge.starts_at, challenge.ends_at].filter(Boolean).join(' to ') || 'No dates set'}
                   </Text>
                   <Button
-                    title="Review Submissions"
+                    title="Manage Challenge"
                     variant={selectedChallenge?.id === challenge.id ? 'soft' : 'outline'}
                     size="small"
                     onPress={() => setSelectedChallengeId(challenge.id)}
@@ -218,6 +299,69 @@ export default function AdminChallengesScreen() {
               </Text>
             </View>
           )
+        ) : null}
+
+        {selectedChallenge ? (
+          <View style={styles.panel}>
+            <Text variant="subheading">Edit Challenge</Text>
+            <Text variant="caption" style={styles.muted}>
+              {selectedChallenge.is_open
+                ? 'This challenge is open for submissions.'
+                : 'This challenge is scheduled or closed.'}
+            </Text>
+            <View style={styles.form}>
+              <Input
+                placeholder="Title"
+                value={editForm.title}
+                onChangeText={(title) => setEditForm((current) => ({ ...current, title }))}
+              />
+              <Input
+                placeholder="Month label (optional)"
+                value={editForm.month}
+                onChangeText={(month) => setEditForm((current) => ({ ...current, month }))}
+              />
+              <Input
+                placeholder="Start date or ISO timestamp (optional)"
+                value={editForm.starts_at}
+                onChangeText={(starts_at) =>
+                  setEditForm((current) => ({ ...current, starts_at }))
+                }
+              />
+              <Input
+                placeholder="End date or ISO timestamp (optional)"
+                value={editForm.ends_at}
+                onChangeText={(ends_at) =>
+                  setEditForm((current) => ({ ...current, ends_at }))
+                }
+              />
+              <Input
+                placeholder="Description (optional)"
+                multiline
+                value={editForm.description}
+                onChangeText={(description) =>
+                  setEditForm((current) => ({ ...current, description }))
+                }
+                style={styles.multilineInput}
+              />
+              <View style={styles.actions}>
+                <Button
+                  title={updating ? 'Saving...' : 'Save Changes'}
+                  onPress={onUpdate}
+                  disabled={updating}
+                  style={styles.actionButton}
+                />
+                {selectedChallenge.is_open ? (
+                  <Button
+                    title="Close Now"
+                    variant="outline"
+                    onPress={onClose}
+                    disabled={updating}
+                    style={styles.actionButton}
+                  />
+                ) : null}
+              </View>
+            </View>
+          </View>
         ) : null}
 
         {selectedChallenge ? (

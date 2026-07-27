@@ -20,7 +20,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_DEMO_MODE": "false"
+        "EXPO_PUBLIC_DEMO_MODE": "false",
+        "EXPO_PUBLIC_GOOGLE_AUTH_ENABLED": "false"
       }
     }
   },

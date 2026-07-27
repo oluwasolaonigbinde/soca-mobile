@@ -32,6 +32,12 @@ A change is acceptable when:
 - View player profile + highlights
 - Send a message to a player
 - Mark event as Interested (if slice implemented)
+- Club / Org: create an event that is attributed to the signed-in profile
+
+### Admin
+- Create and edit challenges
+- Close an active challenge to prevent new submissions
+- Edit challenges created by another admin without changing the original creator
 
 ---
 

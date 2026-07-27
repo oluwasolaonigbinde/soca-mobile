@@ -22,3 +22,7 @@ export function canSubmitChallengeVideos(
 ): boolean {
   return role === 'player';
 }
+
+export function canCreateEvents(role: UserRole | null | undefined): boolean {
+  return role === 'club' || role === 'org';
+}

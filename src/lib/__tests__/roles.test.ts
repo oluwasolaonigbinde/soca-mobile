@@ -1,4 +1,5 @@
 import {
+  canCreateEvents,
   canSubmitChallengeVideos,
   canUploadHighlights,
   getRoleHome,
@@ -15,5 +16,13 @@ describe('role capabilities', () => {
     expect(canUploadHighlights('club')).toBe(false);
     expect(canSubmitChallengeVideos('player')).toBe(true);
     expect(canSubmitChallengeVideos('org')).toBe(false);
+  });
+
+  it('allows only clubs and organizations to create events', () => {
+    expect(canCreateEvents('club')).toBe(true);
+    expect(canCreateEvents('org')).toBe(true);
+    expect(canCreateEvents('player')).toBe(false);
+    expect(canCreateEvents('scout')).toBe(false);
+    expect(canCreateEvents(null)).toBe(false);
   });
 });

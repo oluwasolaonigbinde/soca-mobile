@@ -70,7 +70,8 @@ See `docs/store-release.md` for App Store, TestFlight, Google Play, and EAS buil
 
 - Admin access is controlled by `auth.users.raw_app_meta_data.is_admin = true`; it is an admin capability, not a fifth SOCA role.
 - Admin-capable users see an **Admin** entry in app navigation. Non-admin users do not see the entry and `/admin/*` routes are guarded by `AdminGate`.
-- Admin screens support creating events and challenges, reviewing challenge submissions, saving internal `admin_score` values, assigning challenge winners, managing featured items, resolving/dismissing reports, and verifying/unverifying profiles.
+- Club and Organization accounts can create self-attributed events; admins retain full event management.
+- Admin screens support creating, editing, and closing challenges, reviewing challenge submissions, saving internal `admin_score` values, assigning challenge winners, managing featured items, resolving/dismissing reports, and verifying/unverifying profiles.
 - Challenge winner assignment writes to `profile_achievements`; those achievements are public-read and render on the winning profile's About tab.
 - Event winner assignment is not exposed in V1 because events currently have only `event_interest`, not submissions/participants or scoring.
 

@@ -6,6 +6,8 @@ import {
   listDemoEvents,
   setDemoEventInterested,
 } from '@/lib/demo-mode';
+import { getCurrentUserProfileOrThrow } from '@/lib/authorization';
+import { canCreateEvents } from '@/lib/roles';
 import { supabase } from '@/lib/supabase';
 import type { Event, EventInterest, Profile } from '@/types/database';
 
@@ -17,6 +19,21 @@ export interface EventRecord extends Event {
   event_date: string | null;
   organizer_name: string | null;
   interested_count: number;
+}
+
+export interface OrganizerEventInput {
+  title: string;
+  date: string;
+  location?: string;
+  description?: string;
+}
+
+interface OrganizerEventInsert {
+  title: string;
+  date: string;
+  location: string | null;
+  description: string | null;
+  organizer_id: string;
 }
 
 function isMissingRelationError(error: unknown) {
@@ -47,6 +64,39 @@ function toEventTimestamp(eventDate: string | null) {
 
   const parsed = Date.parse(eventDate);
   return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+}
+
+function normalizeRequiredDate(value: string) {
+  const trimmed = value.trim();
+  const parsed = Date.parse(trimmed);
+
+  if (!trimmed || !Number.isFinite(parsed)) {
+    throw new Error('Enter a valid event date and time.');
+  }
+
+  return new Date(parsed).toISOString();
+}
+
+export function prepareOrganizerEventInsert(
+  profile: Pick<Profile, 'id' | 'role'>,
+  input: OrganizerEventInput,
+): OrganizerEventInsert {
+  if (!canCreateEvents(profile.role)) {
+    throw new Error('Only club and organization accounts can create events.');
+  }
+
+  const title = input.title.trim();
+  if (!title) {
+    throw new Error('Event title is required.');
+  }
+
+  return {
+    title,
+    date: normalizeRequiredDate(input.date),
+    location: input.location?.trim() || null,
+    description: input.description?.trim() || null,
+    organizer_id: profile.id,
+  };
 }
 
 export function sortEventsByUpcomingDate<T extends Pick<EventRecord, 'event_date' | 'created_at'>>(
@@ -183,6 +233,30 @@ export async function getEventById(eventId: string): Promise<EventRecord | null>
 
   const [event] = await enrichEvents([normalized]);
   return event ?? null;
+}
+
+export async function createOrganizerEvent(input: OrganizerEventInput): Promise<EventRecord> {
+  if (DEMO_MODE_ENABLED) {
+    throw new Error('Event creation is unavailable in demo mode.');
+  }
+
+  const profile = await getCurrentUserProfileOrThrow();
+  const insert = prepareOrganizerEventInsert(profile, input);
+  const { data, error } = await supabase.from('events').insert(insert).select('*').single();
+
+  if (error) throw error;
+
+  const normalized = normalizeEvent(data as RawRow);
+  if (!normalized) {
+    throw new Error('The event was created but could not be loaded.');
+  }
+
+  const [event] = await enrichEvents([normalized]);
+  if (!event) {
+    throw new Error('The event was created but could not be loaded.');
+  }
+
+  return event;
 }
 
 export async function getCurrentUserEventInterest(eventId: string): Promise<boolean> {

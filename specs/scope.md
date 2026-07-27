@@ -72,7 +72,8 @@ Roles determine permissions and visibility within a single unified platform.
 ## 7. Challenges & Leaderboards
 - Admin-created monthly challenges (e.g. Top Dribble of the Month)
 - Player video submissions
-- Scoring based on admin input and engagement metrics
+- Public scoring based on engagement metrics (`likes * 3 + views`)
+- Optional admin scores retained for internal review only
 - Ranked public leaderboards
 
 ---
@@ -85,6 +86,7 @@ Roles determine permissions and visibility within a single unified platform.
 
 ## 9. Events
 - Event listings (trials, showcases, scouting events)
+- Club and Organization accounts can create self-attributed events
 - Event cards displayed on Home / Explore
 - Event detail pages (date, location, description, organizer)
 - Basic interaction (View / Interested)

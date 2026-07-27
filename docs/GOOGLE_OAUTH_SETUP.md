@@ -1,8 +1,8 @@
-# Google OAuth Setup (TODO)
+# Google OAuth Setup
 
 OAuth is tested in a **dev build**, not Expo Go. Run `npx expo run:ios` or `npx expo run:android` to test.
 
-## Dashboard Configuration (TODO)
+## Dashboard Configuration
 
 ### 1. Supabase Dashboard
 
@@ -33,7 +33,7 @@ Ensure `scheme` is set for deep linking (already `socamobile` in this project).
 Add to `.env.local` if needed:
 
 ```
-EXPO_PUBLIC_GOOGLE_AUTH_WEB_CLIENT_ID=your_web_client_id
+EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=true
 ```
 
-(Used if switching to @react-oauth/google for web; current implementation uses Supabase OAuth.)
+The login screen reads this flag before starting the existing Supabase OAuth flow.

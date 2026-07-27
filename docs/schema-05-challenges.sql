@@ -57,6 +57,13 @@ CREATE POLICY challenge_submissions_insert ON challenge_submissions FOR INSERT
       WHERE profiles.id = auth.uid()
         AND profiles.role = 'player'
     )
+    AND EXISTS (
+      SELECT 1
+      FROM challenges
+      WHERE challenges.id = challenge_submissions.challenge_id
+        AND (challenges.starts_at IS NULL OR challenges.starts_at <= now())
+        AND (challenges.ends_at IS NULL OR challenges.ends_at > now())
+    )
   );
 
 DROP POLICY IF EXISTS challenge_submissions_update ON challenge_submissions;
@@ -69,6 +76,13 @@ CREATE POLICY challenge_submissions_update ON challenge_submissions FOR UPDATE
       WHERE profiles.id = auth.uid()
         AND profiles.role = 'player'
     )
+    AND EXISTS (
+      SELECT 1
+      FROM challenges
+      WHERE challenges.id = challenge_submissions.challenge_id
+        AND (challenges.starts_at IS NULL OR challenges.starts_at <= now())
+        AND (challenges.ends_at IS NULL OR challenges.ends_at > now())
+    )
   )
   WITH CHECK (
     auth.uid() = user_id
@@ -78,7 +92,14 @@ CREATE POLICY challenge_submissions_update ON challenge_submissions FOR UPDATE
       WHERE profiles.id = auth.uid()
         AND profiles.role = 'player'
     )
+    AND EXISTS (
+      SELECT 1
+      FROM challenges
+      WHERE challenges.id = challenge_submissions.challenge_id
+        AND (challenges.starts_at IS NULL OR challenges.starts_at <= now())
+        AND (challenges.ends_at IS NULL OR challenges.ends_at > now())
+    )
   );
 
 COMMENT ON TABLE challenges IS 'Admin-created monthly challenges surfaced on Explore and challenge routes.';
-COMMENT ON TABLE challenge_submissions IS 'One submission per player per challenge; leaderboard score is derived in-app from admin_score plus engagement.';
+COMMENT ON TABLE challenge_submissions IS 'One submission per player per challenge; public leaderboard score is derived from engagement only. admin_score is retained for internal review.';

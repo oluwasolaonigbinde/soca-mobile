@@ -64,6 +64,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "882e59d0-2d38-4d36-930b-25449125aa78"
+      }
+    },
+    "owner": "oluexpo"
   }
 }

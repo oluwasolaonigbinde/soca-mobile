@@ -105,10 +105,10 @@ const HOME_CONFIG: Record<UserRole, HomeConfig> = {
         target: '/messages' as Href,
       },
       {
-        title: 'Events',
-        caption: 'Review trials, showcases, and football calendar activity.',
-        icon: 'calendar-star',
-        target: '/events' as Href,
+        title: 'Create event',
+        caption: 'Publish a trial, showcase, or club event for the network.',
+        icon: 'calendar-plus',
+        target: '/events/new' as Href,
       },
     ],
   },
@@ -124,10 +124,10 @@ const HOME_CONFIG: Record<UserRole, HomeConfig> = {
     },
     quickActions: [
       {
-        title: 'Events',
-        caption: 'Check showcase and trial listings visible to the network.',
-        icon: 'calendar-blank-outline',
-        target: '/events' as Href,
+        title: 'Create event',
+        caption: 'Publish a community event or football opportunity.',
+        icon: 'calendar-plus',
+        target: '/events/new' as Href,
       },
       {
         title: 'Messages',

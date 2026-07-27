@@ -95,10 +95,7 @@ DROP POLICY IF EXISTS challenges_update ON challenges;
 CREATE POLICY challenges_update ON challenges
   FOR UPDATE
   USING (COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean, false))
-  WITH CHECK (
-    created_by_admin = auth.uid()
-    AND COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean, false)
-  );
+  WITH CHECK (COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean, false));
 
 DROP POLICY IF EXISTS challenges_delete ON challenges;
 CREATE POLICY challenges_delete ON challenges
@@ -175,6 +172,19 @@ DROP POLICY IF EXISTS events_admin_delete ON events;
 CREATE POLICY events_admin_delete ON events
   FOR DELETE
   USING (COALESCE((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean, false));
+
+DROP POLICY IF EXISTS events_organizer_insert ON events;
+CREATE POLICY events_organizer_insert ON events
+  FOR INSERT
+  WITH CHECK (
+    organizer_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.role IN ('club', 'org')
+    )
+  );
 
 COMMENT ON TABLE reports IS 'User-submitted moderation reports for profile and video content.';
 COMMENT ON TABLE profile_achievements IS 'Admin-awarded profile achievements/results, currently used for challenge winners.';

@@ -1,4 +1,8 @@
-import { sortEventsByUpcomingDate, type EventRecord } from '@/lib/events';
+import {
+  prepareOrganizerEventInsert,
+  sortEventsByUpcomingDate,
+  type EventRecord,
+} from '@/lib/events';
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {},
@@ -29,5 +33,45 @@ describe('events ordering', () => {
     ]);
 
     expect(sorted.map((event) => event.id)).toEqual(['event-1', 'event-3', 'event-2']);
+  });
+});
+
+describe('organizer event creation', () => {
+  it('forces the signed-in club profile to be the organizer', () => {
+    expect(
+      prepareOrganizerEventInsert(
+        { id: 'club-1', role: 'club' },
+        {
+          title: '  Academy trials  ',
+          date: '2026-08-15T10:00:00.000Z',
+          location: '  Lagos  ',
+          description: '  Open registration  ',
+        },
+      ),
+    ).toEqual({
+      title: 'Academy trials',
+      date: '2026-08-15T10:00:00.000Z',
+      location: 'Lagos',
+      description: 'Open registration',
+      organizer_id: 'club-1',
+    });
+  });
+
+  it.each(['player', 'scout'] as const)('denies the %s role', (role) => {
+    expect(() =>
+      prepareOrganizerEventInsert(
+        { id: `${role}-1`, role },
+        { title: 'Trials', date: '2026-08-15T10:00:00.000Z' },
+      ),
+    ).toThrow('Only club and organization accounts can create events.');
+  });
+
+  it('rejects an invalid date', () => {
+    expect(() =>
+      prepareOrganizerEventInsert(
+        { id: 'org-1', role: 'org' },
+        { title: 'Community cup', date: 'not-a-date' },
+      ),
+    ).toThrow('Enter a valid event date and time.');
   });
 });

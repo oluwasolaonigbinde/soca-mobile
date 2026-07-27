@@ -48,6 +48,14 @@ export interface AdminChallengeSubmissionRecord extends ChallengeLeaderboardEntr
   rank: number;
 }
 
+export interface ChallengeMutationInput {
+  title: string;
+  description: string;
+  month: string;
+  starts_at: string;
+  ends_at: string;
+}
+
 function getString(row: RawRow, key: string) {
   const value = row[key];
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
@@ -95,6 +103,28 @@ function normalizeDateInput(value: string, fieldLabel: string) {
   }
 
   return new Date(parsed).toISOString();
+}
+
+export function prepareChallengeMutation(input: ChallengeMutationInput) {
+  const title = input.title.trim();
+  if (!title) {
+    throw new Error('Challenge title is required.');
+  }
+
+  const startsAt = normalizeDateInput(input.starts_at, 'Start date');
+  const endsAt = normalizeDateInput(input.ends_at, 'End date');
+
+  if (startsAt && endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) {
+    throw new Error('End date must be after the start date.');
+  }
+
+  return {
+    title,
+    description: input.description.trim() || null,
+    month: input.month.trim() || null,
+    starts_at: startsAt,
+    ends_at: endsAt,
+  };
 }
 
 function normalizeSortOrder(value: string) {
@@ -222,35 +252,14 @@ export async function listAdminEvents(limit = 50): Promise<EventRecord[]> {
   return listEvents(limit);
 }
 
-export async function createChallenge(input: {
-  title: string;
-  description: string;
-  month: string;
-  starts_at: string;
-  ends_at: string;
-}) {
+export async function createChallenge(input: ChallengeMutationInput) {
   const adminUserId = await requireAdminAccess('create challenges');
-  const title = input.title.trim();
-
-  if (!title) {
-    throw new Error('Challenge title is required.');
-  }
-
-  const startsAt = normalizeDateInput(input.starts_at, 'Start date');
-  const endsAt = normalizeDateInput(input.ends_at, 'End date');
-
-  if (startsAt && endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) {
-    throw new Error('End date must be after the start date.');
-  }
+  const challenge = prepareChallengeMutation(input);
 
   const { data, error } = await supabase
     .from('challenges')
     .insert({
-      title,
-      description: input.description.trim() || null,
-      month: input.month.trim() || null,
-      starts_at: startsAt,
-      ends_at: endsAt,
+      ...challenge,
       created_by_admin: adminUserId,
     })
     .select('id')
@@ -259,6 +268,37 @@ export async function createChallenge(input: {
   if (error) throw toActionError(error, 'Unable to create challenge.');
 
   return getChallengeById((data as { id: string }).id);
+}
+
+export async function updateChallenge(challengeId: string, input: ChallengeMutationInput) {
+  await requireAdminAccess('edit challenges');
+  const challenge = prepareChallengeMutation(input);
+  const { error } = await supabase.from('challenges').update(challenge).eq('id', challengeId);
+
+  if (error) throw toActionError(error, 'Unable to update challenge.');
+
+  return getChallengeById(challengeId);
+}
+
+export async function closeChallenge(challengeId: string) {
+  await requireAdminAccess('close challenges');
+  const challenge = await getChallengeById(challengeId);
+
+  if (!challenge) {
+    throw new Error('Challenge not found.');
+  }
+  if (!challenge.is_open) {
+    throw new Error('Only an open challenge can be closed.');
+  }
+
+  const { error } = await supabase
+    .from('challenges')
+    .update({ ends_at: new Date().toISOString() })
+    .eq('id', challengeId);
+
+  if (error) throw toActionError(error, 'Unable to close challenge.');
+
+  return getChallengeById(challengeId);
 }
 
 export async function createEvent(input: {

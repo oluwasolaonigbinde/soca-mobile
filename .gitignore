@@ -48,3 +48,7 @@ yarn-error.*
 .claude/
 .cursor/mcp.json
 .cursor/plans/
+
+# local database exports (may contain production data)
+/backups/
+/supabase/.temp/
