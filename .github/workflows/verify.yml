@@ -29,3 +29,6 @@ jobs:
 
       - name: Verify
         run: npm run verify
+
+      - name: Store preflight
+        run: npm run preflight:store

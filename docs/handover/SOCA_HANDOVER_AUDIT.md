@@ -54,7 +54,7 @@ What blocks a clean handover: (a) the work is not committed/pushed; (b) native s
 ### What should be deferred to future scope
 
 - Phase-2 items per `specs/scope.md`: stories/reels, live streaming, push notifications, media in chat, multi-role switching, event ticketing.
-- App Store / Play Store / TestFlight publishing and ongoing hosting/ops — explicitly out of scope.
+- Store release-readiness is now documented in `docs/store-release.md`; client-owned store accounts, legal policy hosting, final screenshots, reviewer communication, review outcomes, and ongoing hosting/ops remain out of scope.
 
 ---
 
@@ -232,7 +232,7 @@ What blocks a clean handover: (a) the work is not committed/pushed; (b) native s
 
 ### Future phase (out of MVP)
 
-26. Realtime messages, push notifications, App Store / Play Store publishing, hosting/ops, payments, advanced AI, computer-vision analysis — explicitly Phase 2/3 per `specs/scope.md` §16.
+26. Realtime messages, push notifications, ongoing store operations, hosting/ops, payments, advanced AI, computer-vision analysis - explicitly future scope per `specs/scope.md` and `docs/store-release.md`.
 
 ---
 

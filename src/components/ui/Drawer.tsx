@@ -8,6 +8,7 @@ import {
   Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import type { Href } from 'expo-router';
 import { usePathname, useRouter } from 'expo-router';
 
 import { BrandWordmark } from './BrandWordmark';
@@ -114,6 +115,23 @@ export function Drawer({ visible, onClose }: DrawerProps) {
           </View>
 
           <View style={styles.footer}>
+            <Pressable
+              onPress={() => {
+                router.push('/me/settings' as Href);
+                onClose();
+              }}
+              style={({ pressed }) => [styles.logoutButton, pressed && styles.navItemPressed]}
+            >
+              <MaterialCommunityIcons
+                name="cog-outline"
+                size={22}
+                color={theme.colors.textMuted}
+              />
+              <Text variant="label" style={styles.logoutLabel}>
+                Settings
+              </Text>
+            </Pressable>
+
             <Pressable
               onPress={handleLogout}
               style={({ pressed }) => [styles.logoutButton, pressed && styles.navItemPressed]}

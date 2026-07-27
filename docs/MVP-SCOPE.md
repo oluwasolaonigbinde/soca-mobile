@@ -73,7 +73,7 @@ The primary deliverable under this engagement is the complete source code for th
 Upon completion, the Client will receive a recorded video walkthrough demonstrating the core functionality of the application as implemented in the MVP. This video is intended for review, validation, and presumably stakeholder presentation purposes.
 14. Out of Scope Items
 14.1 Application Deployment & Distribution
-Application deployment, including publishing to the Apple App Store, Google Play Store, TestFlight, or any other distribution platform, is not included in the scope of this engagement. These activities require additional setup, third-party accounts, compliance processes, and review cycles, and may be discussed as a separate engagement if required.
+Store release-readiness is now included as a client-requested hardening track: App Store / Google Play / TestFlight build configuration, in-app account deletion, legal-link surfaces, and an EAS release runbook. Client-owned developer accounts, legal policy hosting, screenshots, store listing metadata, final reviewer responses, and ongoing review cycles remain outside the source-code deliverable unless separately agreed.
 14.2 Hosting, Infrastructure & Ongoing Operations
 Ongoing hosting, infrastructure management, monitoring, analytics, and post-delivery operational support are not included in this scope. Responsibility for maintaining, hosting, or operating the application after handover rests with the Client unless otherwise agreed in writing.
 15. Ownership & Responsibility

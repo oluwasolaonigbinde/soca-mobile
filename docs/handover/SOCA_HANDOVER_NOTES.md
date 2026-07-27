@@ -96,9 +96,9 @@ fixed in this pass.
 
 ## What must NOT be promised as included scope
 
-The following are **out of scope** per `specs/scope.md` §14, §16:
+Store release-readiness was added after the original MVP handoff. See `docs/store-release.md` for App Store, TestFlight, Google Play, and EAS build/submit steps. The following remain **out of scope** per the current `specs/scope.md` and release runbook:
 
-- App Store / Google Play / TestFlight publishing or distribution.
+- Client-owned Apple Developer / Google Play Console account setup, legal policy hosting, final screenshots, reviewer communication, review outcomes, and ongoing release operations.
 - Hosting, infrastructure management, monitoring, ongoing operations.
 - Push notifications.
 - Stories / reels / live streaming.

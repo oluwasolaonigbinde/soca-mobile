@@ -1,4 +1,5 @@
 import { buildAvatarImageUri } from '@/lib/avatar-url';
+import { readUploadBody } from '@/lib/file-upload';
 import { supabase } from '@/lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -36,12 +37,11 @@ export async function uploadAvatar() {
   const extension = getFileExtension(asset.uri, asset.mimeType);
   const filePath = `${userData.user.id}/${Date.now()}.${extension}`;
 
-  const imageResponse = await fetch(asset.uri);
-  const imageBlob = await imageResponse.blob();
+  const imageBody = await readUploadBody(asset.uri, 'Avatar');
 
   const { error: uploadError } = await supabase.storage
     .from('avatars')
-    .upload(filePath, imageBlob, {
+    .upload(filePath, imageBody, {
       contentType: asset.mimeType ?? 'image/jpeg',
       upsert: true,
     });

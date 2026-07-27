@@ -132,9 +132,15 @@ Primary deliverable:
 ## 14. Out of Scope Items
 
 ### 14.1 Application Deployment & Distribution
-Not included:
-- App Store / Google Play / TestFlight publishing
-- Distribution pipelines and compliance/review cycles
+Release-readiness is now included as a client-requested hardening track:
+- App Store / Google Play / TestFlight build configuration
+- Store compliance surfaces required in the app, including account deletion and legal links
+- Handoff runbook for EAS build and submit commands
+
+Client-owned external requirements remain outside the source-code deliverable:
+- Apple Developer / Google Play Console accounts
+- Store listing copy, screenshots, legal policy hosting, age ratings, privacy questionnaires, and final reviewer responses
+- Actual review outcomes and ongoing compliance cycles
 
 ### 14.2 Hosting, Infrastructure & Ongoing Operations
 Not included:

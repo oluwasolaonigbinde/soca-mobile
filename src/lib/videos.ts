@@ -10,6 +10,7 @@ import {
   recordDemoVideoView,
   setDemoVideoLiked,
 } from '@/lib/demo-mode';
+import { readUploadBody } from '@/lib/file-upload';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import type { Profile, Video, VideoWithCounts } from '@/types/database';
@@ -355,10 +356,9 @@ export async function uploadVideo(caption: string) {
 
   const extension = getVideoExtension(asset.uri, asset.mimeType);
   const filePath = `${profile.id}/${Date.now()}.${extension}`;
-  const response = await fetch(asset.uri);
-  const videoBlob = await response.blob();
+  const videoBody = await readUploadBody(asset.uri, 'Video');
 
-  const { error: uploadError } = await supabase.storage.from('videos').upload(filePath, videoBlob, {
+  const { error: uploadError } = await supabase.storage.from('videos').upload(filePath, videoBody, {
     contentType: asset.mimeType ?? 'video/mp4',
     upsert: true,
   });

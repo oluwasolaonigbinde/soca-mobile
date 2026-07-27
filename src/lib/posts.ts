@@ -4,6 +4,7 @@ import {
   listDemoFeedVideos,
   listDemoProfileVideos,
 } from '@/lib/demo-mode';
+import { readUploadBody } from '@/lib/file-upload';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import type { Post, PostWithContent, Profile, VideoWithCounts } from '@/types/database';
@@ -421,8 +422,7 @@ export async function createImagePost(body: string) {
   const asset = pickerResult.assets[0];
   const extension = getImageExtension(asset.uri, asset.mimeType);
   const filePath = `${currentUserId}/${Date.now()}.${extension}`;
-  const response = await fetch(asset.uri);
-  const imageBlob = await response.blob();
+  const imageBody = await readUploadBody(asset.uri, 'Image post');
   const trimmedBody = body.trim();
 
   if (DEMO_MODE_ENABLED) {
@@ -449,7 +449,7 @@ export async function createImagePost(body: string) {
 
   const { error: uploadError } = await supabase.storage
     .from(POST_IMAGES_BUCKET)
-    .upload(filePath, imageBlob, {
+    .upload(filePath, imageBody, {
       contentType: asset.mimeType ?? 'image/jpeg',
       upsert: true,
     });

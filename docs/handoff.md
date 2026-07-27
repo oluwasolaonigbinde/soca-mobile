@@ -48,6 +48,15 @@ npx expo export --platform web --output-dir .expo-audit-export
 
 Remove `.expo-audit-export` after local verification if it is not needed.
 
+## Store Release
+
+See `docs/store-release.md` for App Store, TestFlight, Google Play, and EAS build/submit steps. See `docs/client-store-finish-line.md` for the client-facing checklist of everything the client must create, provide, or approve. Store submission is now a release-hardening track with required client-owned assets:
+
+- Apple Developer and Google Play Console access.
+- Public privacy policy and terms URLs.
+- Support URL/email, age rating answers, screenshots, and review demo credentials.
+- Deployed Supabase `delete-account` Edge Function for in-app account deletion.
+
 ## Supabase
 
 - Project ref: `hhwzcaxspfwtqmcvtswu`
@@ -101,5 +110,6 @@ Keep actual demo passwords in the client handoff channel or password manager, no
 
 - Google OAuth still needs provider-side confirmation in Supabase and Google Cloud Console before it should be demonstrated.
 - Event winner assignment is deferred until event participation/scoring exists; challenge winners are implemented and visible on profiles.
-- App Store, TestFlight, Play Store publishing, and ongoing hosting/operations are out of scope for SOCA V1.
+- Store publishing is now documented in `docs/store-release.md`; actual submission still requires client-owned developer accounts, legal URLs, screenshots, and review metadata.
 - `expo-av` is used for video playback and currently emits an SDK deprecation warning during export.
+

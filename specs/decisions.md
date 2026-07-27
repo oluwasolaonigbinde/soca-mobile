@@ -8,7 +8,7 @@ This file prevents re-deciding. If an implementation choice changes, update this
 
 ### Product boundaries
 - We ship **mobile app source code + demo video**.
-- We do **not** ship store deployment, production ops, or ongoing support (out of scope).
+- Store release-readiness is now included as a client-requested hardening track. Client-owned developer accounts, legal URLs, screenshots, final store metadata, reviewer communication, production ops, and ongoing support remain out of scope.
 
 ### Roles
 - Roles are: Player, Scout, Club, Organization.
@@ -105,7 +105,7 @@ Tables:
 - `featured_items` (admin-curated; item_type + item_id + section; ordering/scheduling; RLS read-only for app, writes via service role / admin)
 
 ### Out of scope (explicit)
-- Store publishing / TestFlight / Play Store
+- Store account ownership, final store metadata, reviewer communication, and ongoing release operations
 - Web platform
 - Payments / contracts / transfers / agent management
 - Live streaming
@@ -137,3 +137,4 @@ Tables:
 - **Client mixed posts update (2026-04-26)** `posts` is an additive umbrella feed layer for text posts and optional video attachments; `videos`, `video_likes`, `video_views`, challenge submissions, featured videos, and `/video/[id]` remain the source of truth for highlight playback and engagement. Existing videos without a linked `posts` row are rendered by the app as virtual video posts for backward compatibility.
 - **Final non-admin pass (2026-04-28)** Image/photo posts use additive `posts.image_path` plus a public `post-images` storage bucket with per-user folder write policies. Non-video text/image posts use `post_likes`; video posts continue to use `video_likes` so highlight engagement and challenge scoring remain unchanged.
 - **Admin handoff pass (2026-04-28)** Admin access remains an `is_admin` auth metadata capability. Admin entry now lives in authenticated navigation instead of the player profile hero; event creation uses admin-only `events` write policies; challenge winners are recorded as public-read `profile_achievements` and shown on player profiles. Event winner assignment remains deferred until events have submissions/participants beyond Interested.
+- **Store release-readiness (2026-06-07)** Client requested App Store and Play Store readiness after initial MVP handoff scope excluded distribution. The app now carries default bundle/package identifiers, EAS build profiles, in-app account deletion via a Supabase Edge Function, and settings links for privacy/terms. Client-owned developer accounts, legal URLs, screenshots, final metadata, and review outcomes remain external handoff requirements.

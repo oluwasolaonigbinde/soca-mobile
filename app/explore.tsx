@@ -1,5 +1,10 @@
+import { AuthGate } from '@/components/auth/AuthGate';
 import { UnifiedExploreScreen } from '@/components/explore/UnifiedExploreScreen';
 
 export default function ExploreScreen() {
-  return <UnifiedExploreScreen entrypoint="explore" />;
+  return (
+    <AuthGate>
+      <UnifiedExploreScreen entrypoint="explore" />
+    </AuthGate>
+  );
 }
